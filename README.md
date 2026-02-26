@@ -1,35 +1,43 @@
-# Mapawaacking — PR1
+# Mapawaacking — PR2
 
-Este PR migra el MVP A estático a una base full-stack con **Next.js (App Router) + TypeScript**.
+Este PR agrega autenticación básica con **Supabase Auth** (email + contraseña), roles simples y rutas protegidas.
 
 ## Correr en local
 
 ```bash
 npm install
+cp .env.example .env.local
 npm run dev
 ```
 
 Luego abrir `http://localhost:3000`.
 
-## Variables de entorno
+## Variables de entorno necesarias
 
-1. Copiar el archivo de ejemplo:
+Configurar en `.env.local`:
 
-```bash
-cp .env.example .env.local
-```
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `ADMIN_EMAILS` (lista separada por comas)
 
-2. Editar `.env.local` según sea necesario (en este PR todavía no se usan en runtime).
+## Roles (MVP)
 
-## Qué incluye este PR
+- Rol por defecto: `usuario`.
+- Si `app_metadata.role` es `moderador` o `admin`, se respeta.
+- Bootstrap admin por entorno: si el email del usuario está en `ADMIN_EMAILS`, se considera `admin` automáticamente.
 
-- Migración del proyecto a Next.js con estructura `app/`.
-- Port del MVP A (mapa, línea temporal, filtros y ficha) a la página principal.
-- Endpoint placeholder `GET /api/health` que responde `{ "ok": true }`.
-- Scripts estándar: `dev`, `build`, `start`.
+## Rutas y acceso
 
-## Qué vendrá en PR2
+- Home (`/`): pública, mantiene el MVP de mapa + timeline.
+- Login (`/login`) y registro (`/registro`): públicas.
+- Perfil (`/perfil`): requiere sesión.
+- Admin (`/admin`): requiere sesión y rol `moderador` o `admin`.
 
-- Primeros módulos de backend real (sin romper MVP).
-- Base para persistencia (a definir) y organización de dominio.
-- Endpoints iniciales para separar datos del frontend.
+## Prueba rápida
+
+1. Crear cuenta en `/registro`.
+2. Iniciar sesión en `/login`.
+3. Verificar acceso a `/perfil`.
+4. Probar `/admin`:
+   - con usuario normal debe redirigir a `/login`.
+   - con email incluido en `ADMIN_EMAILS` debe permitir acceso.
