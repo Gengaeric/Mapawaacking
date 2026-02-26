@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cartografía espacio-temporal del Waacking en Argentina (2005–2026)</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="encabezado">
+      <h1>Cartografía espacio-temporal del Waacking en Argentina (2005–2026)</h1>
+      <p>Prototipo A — Exploración histórica de personas y eventos de waacking.</p>
+    </header>
+
+    <main class="layout">
+      <aside class="panel-control">
+        <section>
+          <h2>Línea temporal</h2>
+          <label for="lustroSelect">Elegí un lustro</label>
+          <select id="lustroSelect"></select>
+
+          <label for="anioSelect">Elegí un año</label>
+          <select id="anioSelect"></select>
+
+          <p id="estadoTiempo" class="estado-tiempo"></p>
+        </section>
+
+        <section>
+          <h2>Filtros</h2>
+
+          <label for="tipoSelect">Tipo</label>
+          <select id="tipoSelect">
+            <option value="todos">Todos</option>
+            <option value="persona">Personas</option>
+            <option value="evento">Eventos</option>
+          </select>
+
+          <label for="provinciaSelect">Provincia</label>
+          <select id="provinciaSelect">
+            <option value="todas">Todas</option>
+          </select>
+
+          <label for="crewSelect">Crew/Club</label>
+          <select id="crewSelect">
+            <option value="todos">Todos</option>
+          </select>
+
+          <label for="tipoEventoSelect">Tipo de evento</label>
+          <select id="tipoEventoSelect">
+            <option value="todos">Todos</option>
+          </select>
+
+          <button id="limpiarFiltrosBtn" type="button">Limpiar filtros</button>
+        </section>
+
+        <section class="leyenda">
+          <h2>Leyenda</h2>
+          <div><span class="muestra persona"></span> Persona (pin)</div>
+          <div><span class="muestra evento"></span> Evento (cuadrado)</div>
+          <small>Los elementos más antiguos se ven con menor opacidad.</small>
+        </section>
+      </aside>
+
+      <section class="mapa-y-ficha">
+        <div id="map"></div>
+        <article id="ficha" class="ficha">
+          <h2>Ficha de detalle</h2>
+          <p>Hacé clic en un marcador para ver su información.</p>
+        </article>
+      </section>
+    </main>
+
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+    <script src="app.js"></script>
+  </body>
+</html>
