@@ -184,3 +184,62 @@ button:hover {
     border-bottom: 1px solid var(--borde);
   }
 }
+
+
+.barra-navegacion {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1.2rem;
+  border-bottom: 1px solid var(--borde);
+  background: #0f131d;
+}
+
+.barra-navegacion nav {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.barra-navegacion a {
+  color: var(--texto);
+  text-decoration: none;
+}
+
+.estado-sesion {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.auth-layout {
+  max-width: 520px;
+  margin: 2rem auto;
+  padding: 1rem;
+  border: 1px solid var(--borde);
+  border-radius: 0.6rem;
+  background: #121722;
+}
+
+.auth-form {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.auth-form input {
+  width: 100%;
+  padding: 0.55rem;
+  border-radius: 0.45rem;
+  border: 1px solid var(--borde);
+  color: var(--texto);
+  background: var(--panel-claro);
+}
+
+.mensaje-error {
+  color: #ff98b0;
+}
+
+.mensaje-ok {
+  color: #86f4c2;
+}
