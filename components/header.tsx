@@ -11,6 +11,8 @@ export async function Header() {
     <header className="barra-navegacion">
       <nav>
         <Link href="/">Inicio</Link>
+        <Link href="/personas">Personas</Link>
+        <Link href="/eventos">Eventos</Link>
         {user ? <Link href="/perfil">Mi perfil</Link> : null}
         {user && canAccessAdmin(role) ? <Link href="/admin">Panel de administración</Link> : null}
       </nav>

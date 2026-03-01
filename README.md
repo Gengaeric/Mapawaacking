@@ -1,6 +1,6 @@
-# Mapawaacking — PR2
+# Mapawaacking — PR3
 
-Este PR agrega autenticación básica con **Supabase Auth** (email + contraseña), roles simples y rutas protegidas.
+Este PR incorpora persistencia real con **Supabase Postgres**, modelo SQL, seed y CRUD mínimo para personas/eventos/ediciones/participación.
 
 ## Correr en local
 
@@ -10,34 +10,38 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Luego abrir `http://localhost:3000`.
-
 ## Variables de entorno necesarias
 
 Configurar en `.env.local`:
 
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY` (**solo server-side**)
 - `ADMIN_EMAILS` (lista separada por comas)
 
-## Roles (MVP)
+> Importante: no exponer `SUPABASE_SERVICE_ROLE_KEY` en cliente.
 
-- Rol por defecto: `usuario`.
-- Si `app_metadata.role` es `moderador` o `admin`, se respeta.
-- Bootstrap admin por entorno: si el email del usuario está en `ADMIN_EMAILS`, se considera `admin` automáticamente.
+## Esquema y seed
 
-## Rutas y acceso
+- Esquema SQL: `supabase/schema.sql`
+- Datos iniciales: `supabase/seed.sql`
 
-- Home (`/`): pública, mantiene el MVP de mapa + timeline.
-- Login (`/login`) y registro (`/registro`): públicas.
-- Perfil (`/perfil`): requiere sesión.
-- Admin (`/admin`): requiere sesión y rol `moderador` o `admin`.
+Aplicar en Supabase SQL Editor en este orden:
+1. `schema.sql`
+2. `seed.sql`
 
-## Prueba rápida
+## Netlify
 
-1. Crear cuenta en `/registro`.
-2. Iniciar sesión en `/login`.
-3. Verificar acceso a `/perfil`.
-4. Probar `/admin`:
-   - con usuario normal debe redirigir a `/login`.
-   - con email incluido en `ADMIN_EMAILS` debe permitir acceso.
+Para que funcione en deploy, definir las variables en:
+
+- **Site settings → Environment variables**
+
+Luego redeploy automático desde la rama principal.
+
+## Funcionalidades PR3
+
+- CRUD mínimo de personas y eventos.
+- Alta de ediciones por evento recurrente.
+- Participación de personas en ediciones.
+- Mapa/timeline consumiendo datos de DB (`/api/map-data`).
+- Escritura de `audit_log` en acciones CREATE/UPDATE/DELETE.
