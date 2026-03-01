@@ -1,16 +1,10 @@
 import { cookies } from "next/headers";
+import { getSupabaseAnonKey, getSupabaseUrl } from "@/lib/supabase/env";
 
 const ACCESS_COOKIE = "sb-access-token";
 
 function getSupabaseConfig() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (!url || !anonKey) {
-    throw new Error("Faltan variables de entorno de Supabase.");
-  }
-
-  return { url, anonKey };
+  return { url: getSupabaseUrl(), anonKey: getSupabaseAnonKey() };
 }
 
 type SupabaseUser = {
