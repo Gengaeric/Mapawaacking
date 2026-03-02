@@ -23,7 +23,8 @@ Aplicar en Supabase SQL Editor:
 
 1. `supabase/schema.sql` (si montás desde cero)
 2. `supabase/migrations/20260302_pr4_admin.sql` (si ya venías de PR3)
-3. `supabase/seed.sql` (opcional)
+3. `supabase/migrations/20260302_pr42_add_soft_delete.sql` (**DB migration needed** para arreglar `events.is_deleted` faltante en producción; correr este SQL una vez en Supabase SQL Editor)
+4. `supabase/seed.sql` (opcional)
 
 Cambios de DB principales:
 - `people` y `events`: `is_deleted`, `deleted_at` (soft delete)
