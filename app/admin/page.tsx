@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { BackfillGeocodesButton } from "@/app/admin/backfill-geocodes-button";
 import { deleteEventAction, deletePersonAction, restoreEventAction, restorePersonAction } from "@/app/contenido/actions";
 import { UsersManager } from "@/app/admin/users-manager";
 import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
@@ -90,6 +91,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
       {tab === "contenido" && (
         <section>
           <h2>Contenido</h2>
+          {role === "admin" ? <BackfillGeocodesButton /> : null}
           <nav style={{ display: "flex", gap: 8 }}>
             <Link href="/admin?tab=contenido&tipo=personas">Personas</Link>
             <Link href="/admin?tab=contenido&tipo=eventos">Eventos</Link>

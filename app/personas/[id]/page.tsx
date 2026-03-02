@@ -23,6 +23,7 @@ export default async function PersonaDetallePage({ params }: { params: Promise<{
       <h1>{person.full_name}</h1>
       <p>Nombre artístico: {person.stage_name ?? "-"}</p>
       <p>Ciudad/Provincia: {person.city}, {person.province}</p>
+      {!person.latitude || !person.longitude ? <p>No pudimos ubicar esta ciudad/provincia.</p> : null}
       <p>Año inicio: {person.start_year}</p>
       <p>{person.biography}</p>
 

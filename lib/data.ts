@@ -67,6 +67,19 @@ export type Participation = {
   event_id: string | null;
 };
 
+export type GeocodeCache = {
+  id: string;
+  query: string;
+  city: string;
+  province: string;
+  country: string;
+  lat: number;
+  lng: number;
+  raw: Json;
+  created_at: string;
+  updated_at: string;
+};
+
 export async function listPeople(includeDeleted = false) {
   const deletedFilter = includeDeleted ? "" : "&is_deleted=eq.false";
   return dbSelect<Person>("people", `select=*&order=created_at.desc${deletedFilter}`);
@@ -198,6 +211,25 @@ export async function insertAuditLog(payload: {
   after?: Json;
 }) {
   await dbInsert("audit_log", payload);
+}
+
+export async function getGeocodeCacheByQuery(query: string) {
+  const encoded = encodeURIComponent(query);
+  const rows = await dbSelect<GeocodeCache>("geocode_cache", `select=*&query=eq.${encoded}&limit=1`);
+  return rows[0] ?? null;
+}
+
+export async function upsertGeocodeCache(payload: {
+  query: string;
+  city: string;
+  province: string;
+  country: string;
+  lat: number;
+  lng: number;
+  raw: Json;
+}) {
+  const rows = await dbUpsert("geocode_cache", payload, "query");
+  return rows[0] as GeocodeCache;
 }
 
 export async function listAuditLogs(query: string) {

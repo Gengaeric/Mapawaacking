@@ -30,10 +30,7 @@ export default async function NuevaPersonaPage() {
         <input name="instagram" />
         <label>Imagen (data URI SVG)</label>
         <textarea name="profile_image_data_uri" rows={3} />
-        <label>Latitud</label>
-        <input name="latitude" type="number" step="any" />
-        <label>Longitud</label>
-        <input name="longitude" type="number" step="any" />
+        <p>La ubicación se completa automáticamente con ciudad y provincia.</p>
         <button type="submit">Crear</button>
       </form>
     </main>

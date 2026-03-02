@@ -35,10 +35,7 @@ export default async function EditarEventoPage({ params }: { params: Promise<{ i
         <label>
           <input type="checkbox" name="is_recurring" defaultChecked={event.is_recurring} /> Es recurrente
         </label>
-        <label>Latitud</label>
-        <input name="latitude" type="number" step="any" defaultValue={event.latitude ?? ""} />
-        <label>Longitud</label>
-        <input name="longitude" type="number" step="any" defaultValue={event.longitude ?? ""} />
+        <p>La ubicación se completa automáticamente con ciudad y provincia.</p>
         <button type="submit">Guardar</button>
       </form>
     </main>

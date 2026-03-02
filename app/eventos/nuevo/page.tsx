@@ -29,10 +29,7 @@ export default async function NuevoEventoPage() {
         <label>
           <input type="checkbox" name="is_recurring" /> Es recurrente
         </label>
-        <label>Latitud</label>
-        <input name="latitude" type="number" step="any" />
-        <label>Longitud</label>
-        <input name="longitude" type="number" step="any" />
+        <p>La ubicación se completa automáticamente con ciudad y provincia.</p>
         <button type="submit">Crear</button>
       </form>
     </main>

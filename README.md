@@ -1,6 +1,6 @@
-# Mapawaacking — PR4
+# Mapawaacking — PR5
 
-Este PR convierte `/admin` en un panel real de moderación con pestañas de **Contenido**, **Auditoría**, **Estadísticas** y **Usuarios/Roles**.
+Este PR agrega geocoding automático (ciudad + provincia) para **personas**, **eventos** y **ediciones** sin pedir coordenadas manuales al usuario.
 
 ## Correr en local
 
@@ -14,34 +14,34 @@ npm run dev
 
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY` (**solo server-side**, requerida para endpoints admin de usuarios)
-- `ADMIN_EMAILS` (lista separada por comas, estos mails siempre son `admin`)
+- `SUPABASE_SERVICE_ROLE_KEY` (**solo server-side**)
+- `ADMIN_EMAILS` (lista separada por comas)
+- `GEOCODER_USER_AGENT` (opcional, recomendado para personalizar el User-Agent de Nominatim)
 
 ## Migraciones
 
 Aplicar en Supabase SQL Editor:
 
 1. `supabase/schema.sql` (si montás desde cero)
-2. `supabase/migrations/20260302_pr4_admin.sql` (si ya venías de PR3)
-3. `supabase/migrations/20260302_pr42_add_soft_delete.sql` (**DB migration needed** para arreglar `events.is_deleted` faltante en producción; correr este SQL una vez en Supabase SQL Editor)
-4. `supabase/seed.sql` (opcional)
+2. `supabase/migrations/20260302_pr4_admin.sql`
+3. `supabase/migrations/20260302_pr42_add_soft_delete.sql`
+4. `supabase/migrations/20260302_pr5_geocode_cache.sql`
+5. `supabase/seed.sql` (opcional)
 
-Cambios de DB principales:
-- `people` y `events`: `is_deleted`, `deleted_at` (soft delete)
-- nueva tabla `profiles` para rol persistente (`usuario`/`moderador`/`admin`)
+## Qué hace PR5
 
-## Roles y prueba local
+- Geocoding server-side con Nominatim (OpenStreetMap).
+- Cache en DB (`geocode_cache`) para evitar requests repetidos.
+- Rate limit básico por instancia (1 request/segundo cuando no hay cache hit).
+- Integración en altas/ediciones de personas, eventos y nuevas ediciones.
+- Si no se puede geocodear, guarda igual con lat/lng nulos y muestra aviso en detalle.
 
-1. Crear usuarios desde `/registro`.
-2. Iniciar sesión con un email definido en `ADMIN_EMAILS` para entrar como admin.
-3. Ir a `/admin?tab=usuarios`.
-4. Usar “Hacer moderador” / “Quitar moderador”.
-5. Probar acceso a `/admin` con ese usuario promovido.
+## Backfill de coordenadas faltantes
 
-## Funcionalidades PR4
+En `/admin` (solo admin) hay un botón **“Completar coordenadas faltantes”**.
 
-- Panel `/admin` con navegación por pestañas en español.
-- Gestión de contenido (Personas/Eventos): buscar, filtrar, editar, ocultar/restaurar.
-- Auditoría visible con filtros por entidad, acción, actor y rango de fechas.
-- Estadísticas agregadas de personas/eventos/ediciones/participación.
-- Gestión de roles por API server-side con `SUPABASE_SERVICE_ROLE_KEY`.
+- Ejecuta `POST /api/admin/backfill-geocodes`.
+- Recorre personas/eventos con lat/lng nulos y ciudad/provincia válidas.
+- Usa cache + geocoding server-side.
+- Actualiza filas y registra `audit_log` por cada update.
+- Devuelve resumen: cuántos actualizó y cuántos fallaron.
