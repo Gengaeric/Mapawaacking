@@ -19,28 +19,33 @@ import {
   updateEvent,
   updatePerson
 } from "@/lib/data";
+import { geocodeLocation } from "@/lib/geocoding";
 
-function parseNumber(value: FormDataEntryValue | null) {
-  if (!value) return null;
-  const num = Number(String(value));
-  return Number.isFinite(num) ? num : null;
+
+function cleanText(value: FormDataEntryValue | null) {
+  return String(value ?? "").trim();
 }
 
 export async function createPersonAction(formData: FormData) {
   const user = await requireUser();
+  const city = cleanText(formData.get("city"));
+  const province = cleanText(formData.get("province"));
+  if (!city || !province) throw new Error("Ciudad y provincia son obligatorias.");
+  const geocoded = await geocodeLocation(city, province);
+
   const payload = {
     user_id: user.id,
-    full_name: String(formData.get("full_name") ?? ""),
-    stage_name: String(formData.get("stage_name") ?? "") || null,
-    city: String(formData.get("city") ?? ""),
-    province: String(formData.get("province") ?? ""),
+    full_name: cleanText(formData.get("full_name")),
+    stage_name: cleanText(formData.get("stage_name")) || null,
+    city,
+    province,
     start_year: Number(formData.get("start_year") ?? 0),
-    biography: String(formData.get("biography") ?? "") || null,
-    profile_image_data_uri: String(formData.get("profile_image_data_uri") ?? "") || null,
-    crew_or_club: String(formData.get("crew_or_club") ?? "") || null,
-    latitude: parseNumber(formData.get("latitude")),
-    longitude: parseNumber(formData.get("longitude")),
-    social_links: { instagram: String(formData.get("instagram") ?? "") }
+    biography: cleanText(formData.get("biography")) || null,
+    profile_image_data_uri: cleanText(formData.get("profile_image_data_uri")) || null,
+    crew_or_club: cleanText(formData.get("crew_or_club")) || null,
+    latitude: geocoded?.lat ?? null,
+    longitude: geocoded?.lng ?? null,
+    social_links: { instagram: cleanText(formData.get("instagram")) }
   };
 
   const person = await createPerson(payload);
@@ -56,18 +61,26 @@ export async function updatePersonAction(formData: FormData) {
   if (!existing) throw new Error("NOT_FOUND");
   if (!canEditOwnerResource(user.id, existing.user_id, canManage)) throw new Error("FORBIDDEN");
 
+  const city = cleanText(formData.get("city"));
+  const province = cleanText(formData.get("province"));
+  if (!city || !province) throw new Error("Ciudad y provincia son obligatorias.");
+  const locationChanged = existing.city !== city || existing.province !== province;
+  const geocoded = locationChanged || existing.latitude == null || existing.longitude == null
+    ? await geocodeLocation(city, province)
+    : null;
+
   const payload = {
-    full_name: String(formData.get("full_name") ?? ""),
-    stage_name: String(formData.get("stage_name") ?? "") || null,
-    city: String(formData.get("city") ?? ""),
-    province: String(formData.get("province") ?? ""),
+    full_name: cleanText(formData.get("full_name")),
+    stage_name: cleanText(formData.get("stage_name")) || null,
+    city,
+    province,
     start_year: Number(formData.get("start_year") ?? 0),
-    biography: String(formData.get("biography") ?? "") || null,
-    profile_image_data_uri: String(formData.get("profile_image_data_uri") ?? "") || null,
-    crew_or_club: String(formData.get("crew_or_club") ?? "") || null,
-    latitude: parseNumber(formData.get("latitude")),
-    longitude: parseNumber(formData.get("longitude")),
-    social_links: { instagram: String(formData.get("instagram") ?? "") }
+    biography: cleanText(formData.get("biography")) || null,
+    profile_image_data_uri: cleanText(formData.get("profile_image_data_uri")) || null,
+    crew_or_club: cleanText(formData.get("crew_or_club")) || null,
+    latitude: geocoded ? geocoded.lat : existing.latitude,
+    longitude: geocoded ? geocoded.lng : existing.longitude,
+    social_links: { instagram: cleanText(formData.get("instagram")) }
   };
 
   const updated = await updatePerson(id, payload);
@@ -106,18 +119,23 @@ export async function restorePersonAction(formData: FormData) {
 
 export async function createEventAction(formData: FormData) {
   const user = await requireUser();
+  const city = cleanText(formData.get("city"));
+  const province = cleanText(formData.get("province"));
+  if (!city || !province) throw new Error("Ciudad y provincia son obligatorias.");
+  const geocoded = await geocodeLocation(city, province);
+
   const payload = {
     created_by: user.id,
-    name: String(formData.get("name") ?? ""),
-    event_type: String(formData.get("event_type") ?? ""),
-    city: String(formData.get("city") ?? ""),
-    province: String(formData.get("province") ?? ""),
-    description: String(formData.get("description") ?? "") || null,
-    cover_image_data_uri: String(formData.get("cover_image_data_uri") ?? "") || null,
+    name: cleanText(formData.get("name")),
+    event_type: cleanText(formData.get("event_type")),
+    city,
+    province,
+    description: cleanText(formData.get("description")) || null,
+    cover_image_data_uri: cleanText(formData.get("cover_image_data_uri")) || null,
     is_recurring: String(formData.get("is_recurring") ?? "") === "on",
-    latitude: parseNumber(formData.get("latitude")),
-    longitude: parseNumber(formData.get("longitude")),
-    links: { web: String(formData.get("web") ?? "") }
+    latitude: geocoded?.lat ?? null,
+    longitude: geocoded?.lng ?? null,
+    links: { web: cleanText(formData.get("web")) }
   };
 
   const event = await createEvent(payload);
@@ -133,17 +151,25 @@ export async function updateEventAction(formData: FormData) {
   if (!existing) throw new Error("NOT_FOUND");
   if (!canEditOwnerResource(user.id, existing.created_by, canManage)) throw new Error("FORBIDDEN");
 
+  const city = cleanText(formData.get("city"));
+  const province = cleanText(formData.get("province"));
+  if (!city || !province) throw new Error("Ciudad y provincia son obligatorias.");
+  const locationChanged = existing.city !== city || existing.province !== province;
+  const geocoded = locationChanged || existing.latitude == null || existing.longitude == null
+    ? await geocodeLocation(city, province)
+    : null;
+
   const payload = {
-    name: String(formData.get("name") ?? ""),
-    event_type: String(formData.get("event_type") ?? ""),
-    city: String(formData.get("city") ?? ""),
-    province: String(formData.get("province") ?? ""),
-    description: String(formData.get("description") ?? "") || null,
-    cover_image_data_uri: String(formData.get("cover_image_data_uri") ?? "") || null,
+    name: cleanText(formData.get("name")),
+    event_type: cleanText(formData.get("event_type")),
+    city,
+    province,
+    description: cleanText(formData.get("description")) || null,
+    cover_image_data_uri: cleanText(formData.get("cover_image_data_uri")) || null,
     is_recurring: String(formData.get("is_recurring") ?? "") === "on",
-    latitude: parseNumber(formData.get("latitude")),
-    longitude: parseNumber(formData.get("longitude")),
-    links: { web: String(formData.get("web") ?? "") }
+    latitude: geocoded ? geocoded.lat : existing.latitude,
+    longitude: geocoded ? geocoded.lng : existing.longitude,
+    links: { web: cleanText(formData.get("web")) }
   };
 
   const updated = await updateEvent(id, payload);
@@ -187,14 +213,18 @@ export async function createEditionAction(formData: FormData) {
   if (!event) throw new Error("NOT_FOUND");
   if (!canEditOwnerResource(user.id, event.created_by, canManage)) throw new Error("FORBIDDEN");
 
+  const city = cleanText(formData.get("city"));
+  const province = cleanText(formData.get("province"));
+  const geocoded = city && province ? await geocodeLocation(city, province) : null;
+
   const edition = await createEdition({
     event_id: eventId,
     year: Number(formData.get("year") ?? 0),
-    date: String(formData.get("date") ?? "") || null,
-    city: String(formData.get("city") ?? "") || null,
-    province: String(formData.get("province") ?? "") || null,
-    latitude: parseNumber(formData.get("latitude")),
-    longitude: parseNumber(formData.get("longitude"))
+    date: cleanText(formData.get("date")) || null,
+    city: city || null,
+    province: province || null,
+    latitude: geocoded?.lat ?? null,
+    longitude: geocoded?.lng ?? null
   });
 
   await insertAuditLog({ actor_user_id: user.id, action: "CREATE", entity_type: "edition", entity_id: edition.id, after: edition });

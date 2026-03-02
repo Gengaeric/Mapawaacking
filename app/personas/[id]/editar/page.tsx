@@ -36,10 +36,7 @@ export default async function EditarPersonaPage({ params }: { params: Promise<{ 
         <input name="instagram" defaultValue={person.social_links?.instagram ?? ""} />
         <label>Imagen (data URI SVG)</label>
         <textarea name="profile_image_data_uri" rows={3} defaultValue={person.profile_image_data_uri ?? ""} />
-        <label>Latitud</label>
-        <input name="latitude" type="number" step="any" defaultValue={person.latitude ?? ""} />
-        <label>Longitud</label>
-        <input name="longitude" type="number" step="any" defaultValue={person.longitude ?? ""} />
+        <p>La ubicación se completa automáticamente con ciudad y provincia.</p>
         <button type="submit">Guardar</button>
       </form>
     </main>

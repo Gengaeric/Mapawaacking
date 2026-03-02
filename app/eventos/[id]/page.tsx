@@ -37,6 +37,7 @@ export default async function EventoDetallePage({ params }: { params: Promise<{ 
       <p>
         Ciudad/Provincia: {event.city}, {event.province}
       </p>
+      {!event.latitude || !event.longitude ? <p>No pudimos ubicar esta ciudad/provincia.</p> : null}
       <p>{event.description}</p>
 
       <section>
@@ -62,10 +63,7 @@ export default async function EventoDetallePage({ params }: { params: Promise<{ 
           <input name="city" defaultValue={event.city} />
           <label>Provincia</label>
           <input name="province" defaultValue={event.province} />
-          <label>Latitud</label>
-          <input name="latitude" type="number" step="any" defaultValue={event.latitude ?? ""} />
-          <label>Longitud</label>
-          <input name="longitude" type="number" step="any" defaultValue={event.longitude ?? ""} />
+          <p>La ubicación se completa automáticamente con ciudad y provincia.</p>
           <button type="submit">Agregar edición</button>
         </form>
       </section>
