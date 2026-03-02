@@ -1,5 +1,5 @@
 import type { Json } from "@/lib/supabase/db";
-import { dbDelete, dbInsert, dbSelect, dbUpdate } from "@/lib/supabase/db";
+import { dbDelete, dbInsert, dbSelect, dbUpdate, dbUpsert } from "@/lib/supabase/db";
 
 export type Person = {
   id: string;
@@ -17,6 +17,8 @@ export type Person = {
   crew_or_club: string | null;
   created_at: string;
   updated_at: string;
+  is_deleted?: boolean;
+  deleted_at?: string | null;
 };
 
 export type Event = {
@@ -33,6 +35,16 @@ export type Event = {
   gallery_images_data_uri: string[];
   links: Record<string, string>;
   is_recurring: boolean;
+  created_at: string;
+  updated_at: string;
+  is_deleted?: boolean;
+  deleted_at?: string | null;
+};
+
+export type Profile = {
+  user_id: string;
+  email: string;
+  role: "usuario" | "moderador" | "admin";
   created_at: string;
   updated_at: string;
 };
@@ -55,8 +67,9 @@ export type Participation = {
   event_id: string | null;
 };
 
-export async function listPeople() {
-  return dbSelect<Person>("people", "select=*&order=created_at.desc");
+export async function listPeople(includeDeleted = false) {
+  const deletedFilter = includeDeleted ? "" : "&is_deleted=eq.false";
+  return dbSelect<Person>("people", `select=*&order=created_at.desc${deletedFilter}`);
 }
 
 export async function getPerson(id: string) {
@@ -78,8 +91,25 @@ export async function deletePerson(id: string) {
   await dbDelete("people", `id=eq.${id}`);
 }
 
-export async function listEvents() {
-  return dbSelect<Event>("events", "select=*&order=created_at.desc");
+export async function softDeletePerson(id: string) {
+  const rows = await dbUpdate<Person>("people", `id=eq.${id}`, {
+    is_deleted: true,
+    deleted_at: new Date().toISOString()
+  });
+  return rows[0] ?? null;
+}
+
+export async function restorePerson(id: string) {
+  const rows = await dbUpdate<Person>("people", `id=eq.${id}`, {
+    is_deleted: false,
+    deleted_at: null
+  });
+  return rows[0] ?? null;
+}
+
+export async function listEvents(includeDeleted = false) {
+  const deletedFilter = includeDeleted ? "" : "&is_deleted=eq.false";
+  return dbSelect<Event>("events", `select=*&order=created_at.desc${deletedFilter}`);
 }
 
 export async function getEvent(id: string) {
@@ -99,6 +129,22 @@ export async function updateEvent(id: string, payload: Partial<Event>) {
 
 export async function deleteEvent(id: string) {
   await dbDelete("events", `id=eq.${id}`);
+}
+
+export async function softDeleteEvent(id: string) {
+  const rows = await dbUpdate<Event>("events", `id=eq.${id}`, {
+    is_deleted: true,
+    deleted_at: new Date().toISOString()
+  });
+  return rows[0] ?? null;
+}
+
+export async function restoreEvent(id: string) {
+  const rows = await dbUpdate<Event>("events", `id=eq.${id}`, {
+    is_deleted: false,
+    deleted_at: null
+  });
+  return rows[0] ?? null;
 }
 
 export async function listEditionsByEvent(eventId: string) {
@@ -152,4 +198,27 @@ export async function insertAuditLog(payload: {
   after?: Json;
 }) {
   await dbInsert("audit_log", payload);
+}
+
+export async function listAuditLogs(query: string) {
+  return dbSelect<Record<string, Json>>("audit_log", query);
+}
+
+export async function listProfiles() {
+  return dbSelect<Profile>("profiles", "select=*&order=created_at.desc");
+}
+
+export async function getProfile(userId: string) {
+  const rows = await dbSelect<Profile>("profiles", `select=*&user_id=eq.${userId}&limit=1`);
+  return rows[0] ?? null;
+}
+
+export async function upsertProfile(profile: Partial<Profile> & { user_id: string; email: string }) {
+  const rows = await dbUpsert("profiles", profile, "user_id");
+  return rows[0] as Profile;
+}
+
+export async function updateProfileRole(userId: string, role: Profile["role"]) {
+  const rows = await dbUpdate<Profile>("profiles", `user_id=eq.${userId}`, { role });
+  return rows[0] ?? null;
 }

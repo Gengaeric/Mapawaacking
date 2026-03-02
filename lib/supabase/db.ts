@@ -46,6 +46,27 @@ export async function dbInsert<T extends Record<string, Json>>(table: string, pa
   return (await response.json()) as T[];
 }
 
+export async function dbUpsert<T extends Record<string, Json>>(
+  table: string,
+  payload: T | T[],
+  onConflict: string
+) {
+  const response = await fetch(makeUrl(`${table}?on_conflict=${onConflict}`), {
+    method: "POST",
+    headers: {
+      ...buildHeaders("return=representation,resolution=merge-duplicates")
+    },
+    body: JSON.stringify(payload),
+    cache: "no-store"
+  });
+
+  if (!response.ok) {
+    throw new Error(`Error al upsert en ${table}: ${response.status}`);
+  }
+
+  return (await response.json()) as T[];
+}
+
 export async function dbUpdate<T extends Record<string, Json>>(
   table: string,
   query: string,
