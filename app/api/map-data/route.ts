@@ -16,8 +16,41 @@ type ApiErrorPayload = {
 
 type ApiSuccessPayload = {
   ok: true;
-  personas: Array<Record<string, unknown>>;
-  eventos: Array<Record<string, unknown>>;
+  personas: PersonaPayload[];
+  eventos: EventoPayload[];
+};
+
+type PersonaPayload = {
+  id: string;
+  tipo: "persona";
+  nombre: string;
+  nombreArtistico: string;
+  ciudad: string;
+  provincia: string;
+  lat: number;
+  lng: number;
+  anioInicio: number;
+  crewClub: string;
+  bio: string;
+  redes: string;
+  foto: string;
+  participaciones: string[];
+};
+
+type EventoPayload = {
+  id: string;
+  tipo: "evento";
+  nombre: string;
+  tipoEvento: string;
+  fecha: string | null;
+  anio: number;
+  ciudad: string;
+  provincia: string;
+  lat: number;
+  lng: number;
+  descripcion: string;
+  links: string;
+  fotoPortada: string;
 };
 
 type PersonRow = {
@@ -136,7 +169,7 @@ export async function GET() {
       participationsByPerson.set(row.person_id, current);
     }
 
-    const personas = people.map((person) => {
+    const personas: PersonaPayload[] = people.map((person) => {
       const participations = participationsByPerson.get(person.id) ?? [];
       const participacionEtiquetas = participations
         .map((p) => editions.find((e) => e.id === p.edition_id))
@@ -164,7 +197,7 @@ export async function GET() {
       };
     });
 
-    const eventos = editions
+    const eventos: EventoPayload[] = editions
       .map((edition) => {
         const event = events.find((item) => item.id === edition.event_id);
         if (!event) return null;
@@ -184,7 +217,7 @@ export async function GET() {
           fotoPortada: event.cover_image_data_uri ?? ""
         };
       })
-      .filter(Boolean);
+      .filter((event): event is EventoPayload => event !== null);
 
     const payload: ApiSuccessPayload = { ok: true, personas, eventos };
     return NextResponse.json(payload);
