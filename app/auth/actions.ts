@@ -1,7 +1,8 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { signInWithPassword, signOut, signUp } from "@/lib/supabase/server";
+import { ensureUserProfile } from "@/lib/auth/server-roles";
+import { getCurrentUser, signInWithPassword, signOut, signUp } from "@/lib/supabase/server";
 
 export async function login(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim();
@@ -15,6 +16,11 @@ export async function login(formData: FormData) {
 
   if (error) {
     redirect("/login?error=No+se+pudo+iniciar+sesión");
+  }
+
+  const user = await getCurrentUser();
+  if (user) {
+    await ensureUserProfile(user);
   }
 
   redirect("/");

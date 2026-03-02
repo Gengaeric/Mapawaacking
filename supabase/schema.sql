@@ -23,7 +23,9 @@ create table if not exists public.people (
   social_links jsonb not null default '{}'::jsonb,
   crew_or_club text,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  is_deleted boolean not null default false,
+  deleted_at timestamptz
 );
 
 create table if not exists public.crews (
@@ -49,7 +51,9 @@ create table if not exists public.events (
   links jsonb not null default '{}'::jsonb,
   is_recurring boolean not null default false,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  is_deleted boolean not null default false,
+  deleted_at timestamptz
 );
 
 create table if not exists public.event_editions (
@@ -72,6 +76,15 @@ create table if not exists public.participation (
   event_id uuid references public.events(id) on delete cascade,
   created_at timestamptz not null default now(),
   check (edition_id is not null or event_id is not null)
+);
+
+
+create table if not exists public.profiles (
+  user_id uuid primary key,
+  email text not null unique,
+  role text not null default 'usuario' check (role in ('usuario', 'moderador', 'admin')),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
 );
 
 create table if not exists public.audit_log (
@@ -99,4 +112,11 @@ for each row execute function set_updated_at();
 
 create trigger trg_events_updated_at
 before update on public.events
+for each row execute function set_updated_at();
+
+
+create index if not exists idx_profiles_role on public.profiles(role);
+
+create trigger trg_profiles_updated_at
+before update on public.profiles
 for each row execute function set_updated_at();

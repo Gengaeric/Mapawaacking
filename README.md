@@ -1,6 +1,6 @@
-# Mapawaacking — PR3
+# Mapawaacking — PR4
 
-Este PR incorpora persistencia real con **Supabase Postgres**, modelo SQL, seed y CRUD mínimo para personas/eventos/ediciones/participación.
+Este PR convierte `/admin` en un panel real de moderación con pestañas de **Contenido**, **Auditoría**, **Estadísticas** y **Usuarios/Roles**.
 
 ## Correr en local
 
@@ -12,36 +12,35 @@ npm run dev
 
 ## Variables de entorno necesarias
 
-Configurar en `.env.local`:
-
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY` (**solo server-side**)
-- `ADMIN_EMAILS` (lista separada por comas)
+- `SUPABASE_SERVICE_ROLE_KEY` (**solo server-side**, requerida para endpoints admin de usuarios)
+- `ADMIN_EMAILS` (lista separada por comas, estos mails siempre son `admin`)
 
-> Importante: no exponer `SUPABASE_SERVICE_ROLE_KEY` en cliente.
+## Migraciones
 
-## Esquema y seed
+Aplicar en Supabase SQL Editor:
 
-- Esquema SQL: `supabase/schema.sql`
-- Datos iniciales: `supabase/seed.sql`
+1. `supabase/schema.sql` (si montás desde cero)
+2. `supabase/migrations/20260302_pr4_admin.sql` (si ya venías de PR3)
+3. `supabase/seed.sql` (opcional)
 
-Aplicar en Supabase SQL Editor en este orden:
-1. `schema.sql`
-2. `seed.sql`
+Cambios de DB principales:
+- `people` y `events`: `is_deleted`, `deleted_at` (soft delete)
+- nueva tabla `profiles` para rol persistente (`usuario`/`moderador`/`admin`)
 
-## Netlify
+## Roles y prueba local
 
-Para que funcione en deploy, definir las variables en:
+1. Crear usuarios desde `/registro`.
+2. Iniciar sesión con un email definido en `ADMIN_EMAILS` para entrar como admin.
+3. Ir a `/admin?tab=usuarios`.
+4. Usar “Hacer moderador” / “Quitar moderador”.
+5. Probar acceso a `/admin` con ese usuario promovido.
 
-- **Site settings → Environment variables**
+## Funcionalidades PR4
 
-Luego redeploy automático desde la rama principal.
-
-## Funcionalidades PR3
-
-- CRUD mínimo de personas y eventos.
-- Alta de ediciones por evento recurrente.
-- Participación de personas en ediciones.
-- Mapa/timeline consumiendo datos de DB (`/api/map-data`).
-- Escritura de `audit_log` en acciones CREATE/UPDATE/DELETE.
+- Panel `/admin` con navegación por pestañas en español.
+- Gestión de contenido (Personas/Eventos): buscar, filtrar, editar, ocultar/restaurar.
+- Auditoría visible con filtros por entidad, acción, actor y rango de fechas.
+- Estadísticas agregadas de personas/eventos/ediciones/participación.
+- Gestión de roles por API server-side con `SUPABASE_SERVICE_ROLE_KEY`.
