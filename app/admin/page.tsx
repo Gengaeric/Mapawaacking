@@ -12,13 +12,26 @@ import { dbSelect } from "@/lib/supabase/db";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { isMissingProfilesTableError, listAuditLogs, listEvents, listPeople, listProfiles } from "@/lib/data";
 
-function AdminErrorPanel({ code }: { code: string }) {
+function sanitizeDebugMessage(message: string) {
+  return message
+    .replace(/(apikey|api_key|token|secret|password)\s*[:=]\s*[^\s,;]+/gi, "$1=[redacted]")
+    .replace(/(bearer\s+)[^\s,;]+/gi, "$1[redacted]");
+}
+
+function extractErrorLocation(error: unknown) {
+  if (!(error instanceof Error) || !error.stack) return "paso desconocido";
+  const stackLines = error.stack.split("\n").map((line) => line.trim());
+  return stackLines[1] ?? "paso desconocido";
+}
+
+function AdminErrorPanel({ code, debugDetail }: { code: string; debugDetail?: string }) {
   return (
     <main className="auth-layout">
       <h1>Panel de administración</h1>
       <section style={{ border: "1px solid #f59e0b", borderRadius: 8, padding: 16, background: "#fffbeb" }}>
         <h2>No se pudo cargar el panel de administración</h2>
         <p>Código de error: {code}</p>
+        {debugDetail ? <p>Detalle técnico (debug): {debugDetail}</p> : null}
         <p>Intentá nuevamente en unos segundos.</p>
       </section>
     </main>
@@ -26,6 +39,9 @@ function AdminErrorPanel({ code }: { code: string }) {
 }
 
 export default async function AdminPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
+  const params = await searchParams;
+  const debugMode = params.debug === "1";
+
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
@@ -33,7 +49,6 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
   if (!canAccessAdmin(role)) redirect("/login");
 
   try {
-    const params = await searchParams;
     const tab = params.tab ?? "contenido";
     const tipo = params.tipo ?? "personas";
     const query = (params.q ?? "").toLowerCase();
@@ -214,6 +229,10 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     );
   } catch (error) {
     console.error("Error al cargar /admin", error);
-    return <AdminErrorPanel code="ADM-LOAD-01" />;
+    const name = error instanceof Error ? error.name : "Error";
+    const message = error instanceof Error ? error.message : "Error desconocido";
+    const location = extractErrorLocation(error);
+    const safeDetail = sanitizeDebugMessage(`${name}: ${message} (${location})`);
+    return <AdminErrorPanel code="ADM-LOAD-01" debugDetail={debugMode ? safeDetail : undefined} />;
   }
 }
