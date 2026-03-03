@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { geocodeLocation } from "@/lib/geocoding";
 
+export async function GET() {
+  return NextResponse.json({ ok: false, error: "Method Not Allowed", hint: "Use POST" }, { status: 405 });
+}
+
 export async function POST(request: Request) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ ok: false, error: "FORBIDDEN" }, { status: 403 });

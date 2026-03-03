@@ -20,6 +20,10 @@ async function requireAdmin() {
   return user;
 }
 
+export async function GET() {
+  return NextResponse.json({ ok: false, error: "Method Not Allowed", hint: "Use POST" }, { status: 405 });
+}
+
 export async function POST() {
   const actor = await requireAdmin();
   if (!actor) return NextResponse.json({ ok: false, error: "FORBIDDEN" }, { status: 403 });

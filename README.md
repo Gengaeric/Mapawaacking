@@ -45,3 +45,12 @@ En `/admin` (solo admin) hay un botón **“Completar coordenadas faltantes”**
 - Usa cache + geocoding server-side.
 - Actualiza filas y registra `audit_log` por cada update.
 - Devuelve resumen: cuántos actualizó y cuántos fallaron.
+
+## Nota de estabilidad local
+
+Si aparecen errores extraños del bundler en desarrollo (por ejemplo, rutas que fallan sin cambios de código), borrá caché de Next y reiniciá:
+
+```bash
+rm -rf .next
+npm run dev
+```
