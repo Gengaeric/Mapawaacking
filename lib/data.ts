@@ -1,6 +1,12 @@
 import type { Json } from "@/lib/supabase/db";
 import { dbDelete, dbInsert, dbSelect, dbUpdate, dbUpsert } from "@/lib/supabase/db";
 
+export function isMissingProfilesTableError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  const message = error.message.toLowerCase();
+  return message.includes("profiles") && (message.includes("404") || message.includes("42p01") || message.includes("does not exist"));
+}
+
 export type Person = {
   id: string;
   user_id: string | null;

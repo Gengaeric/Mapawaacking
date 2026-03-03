@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isMissingProfilesTableError } from "@/lib/data";
 import { dbSelect } from "@/lib/supabase/db";
 
 async function checkStep(step: string, run: () => Promise<unknown>) {
@@ -21,15 +22,43 @@ export async function GET() {
   });
   if (envCheck) return NextResponse.json(envCheck, { status: 500 });
 
-  const profilesCheck = await checkStep("profiles_query", async () => {
+  let profiles = {
+    ok: true,
+    missingMigration: false,
+    detail: "OK"
+  };
+
+  try {
     await dbSelect<{ user_id: string }>("profiles", "select=user_id&limit=1");
-  });
-  if (profilesCheck) return NextResponse.json(profilesCheck, { status: 500 });
+  } catch (error) {
+    if (isMissingProfilesTableError(error)) {
+      profiles = {
+        ok: false,
+        missingMigration: true,
+        detail: "Falta la migración de profiles. Corré la migración en Supabase."
+      };
+    } else {
+      return NextResponse.json(
+        {
+          ok: false,
+          step: "profiles_query",
+          error: error instanceof Error ? error.message : "Error inesperado"
+        },
+        { status: 500 }
+      );
+    }
+  }
 
   const auditCheck = await checkStep("audit_log_query", async () => {
     await dbSelect<{ id: string }>("audit_log", "select=id&limit=1");
   });
   if (auditCheck) return NextResponse.json(auditCheck, { status: 500 });
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({
+    ok: true,
+    checks: {
+      profiles,
+      audit_log: { ok: true }
+    }
+  });
 }

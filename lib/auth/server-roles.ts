@@ -1,4 +1,4 @@
-import { getProfile, upsertProfile } from "@/lib/data";
+import { getProfile, isMissingProfilesTableError, upsertProfile } from "@/lib/data";
 import { resolveUserRole, type UserRole } from "@/lib/auth/roles";
 
 export type BasicUser = {
@@ -13,18 +13,52 @@ export async function ensureUserProfile(user: BasicUser): Promise<UserRole> {
 
   if (!email) return baseRole;
 
-  const profile = await getProfile(user.id);
+  let profile = null;
+  try {
+    profile = await getProfile(user.id);
+  } catch (error) {
+    if (isMissingProfilesTableError(error)) {
+      return baseRole;
+    }
+    throw error;
+  }
 
   if (!profile) {
-    await upsertProfile({ user_id: user.id, email, role: baseRole });
+    try {
+      await upsertProfile({ user_id: user.id, email });
+    } catch (error) {
+      if (!isMissingProfilesTableError(error)) {
+        throw error;
+      }
+    }
     return baseRole;
   }
 
   const resolvedRole = baseRole === "admin" ? "admin" : profile.role;
 
   if (profile.email !== email || profile.role !== resolvedRole) {
-    await upsertProfile({ user_id: user.id, email, role: resolvedRole });
+    try {
+      await upsertProfile({ user_id: user.id, email, role: resolvedRole });
+    } catch (error) {
+      if (!isMissingProfilesTableError(error)) {
+        throw error;
+      }
+      return baseRole;
+    }
   }
 
   return resolvedRole;
+}
+
+export async function upsertBasicProfileOnLogin(user: BasicUser) {
+  const email = user.email?.toLowerCase().trim();
+  if (!email) return;
+
+  try {
+    await upsertProfile({ user_id: user.id, email });
+  } catch (error) {
+    if (!isMissingProfilesTableError(error)) {
+      throw error;
+    }
+  }
 }

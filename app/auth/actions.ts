@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { ensureUserProfile } from "@/lib/auth/server-roles";
+import { ensureUserProfile, upsertBasicProfileOnLogin } from "@/lib/auth/server-roles";
 import { getCurrentUser, signInWithPassword, signOut, signUp } from "@/lib/supabase/server";
 
 export async function login(formData: FormData) {
@@ -20,6 +20,7 @@ export async function login(formData: FormData) {
 
   const user = await getCurrentUser();
   if (user) {
+    await upsertBasicProfileOnLogin(user);
     await ensureUserProfile(user);
   }
 
