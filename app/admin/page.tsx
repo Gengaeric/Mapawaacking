@@ -10,7 +10,7 @@ import { ensureUserProfile } from "@/lib/auth/server-roles";
 import { canAccessAdmin } from "@/lib/auth/roles";
 import { dbSelect } from "@/lib/supabase/db";
 import { getCurrentUser } from "@/lib/supabase/server";
-import { listAuditLogs, listEvents, listPeople, listProfiles } from "@/lib/data";
+import { isMissingProfilesTableError, listAuditLogs, listEvents, listPeople, listProfiles } from "@/lib/data";
 
 function AdminErrorPanel({ code }: { code: string }) {
   return (
@@ -47,7 +47,20 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     const auditFrom = params.desde ?? "";
     const auditTo = params.hasta ?? "";
 
-    const [people, events, profiles] = await Promise.all([listPeople(true), listEvents(true), listProfiles()]);
+    const [people, events, profilesResult] = await Promise.all([
+      listPeople(true),
+      listEvents(true),
+      listProfiles()
+        .then((profiles) => ({ profiles, missingProfilesTable: false }))
+        .catch((error) => {
+          if (isMissingProfilesTableError(error)) {
+            return { profiles: [], missingProfilesTable: true };
+          }
+          throw error;
+        })
+    ]);
+    const profiles = profilesResult.profiles;
+    const missingProfilesTable = profilesResult.missingProfilesTable;
 
     const filteredPeople = people.filter((p) => {
       if (!includeDeleted && p.is_deleted) return false;
@@ -95,6 +108,12 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
       <main className="auth-layout">
         <h1>Panel de administración</h1>
         <p>Rol actual: {role}</p>
+        {missingProfilesTable ? (
+          <section style={{ border: "1px solid #f59e0b", borderRadius: 8, padding: 12, background: "#fffbeb" }}>
+            <p>Falta la tabla profiles. El panel funciona con fallback de roles por ADMIN_EMAILS hasta correr la migración.</p>
+          </section>
+        ) : null}
+
         <nav style={{ display: "flex", gap: 12 }}>
           <Link href="/admin?tab=contenido&tipo=personas">Contenido</Link>
           <Link href="/admin?tab=auditoria">Auditoría</Link>

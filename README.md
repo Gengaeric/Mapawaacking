@@ -26,7 +26,10 @@ Aplicar en Supabase SQL Editor:
 2. `supabase/migrations/20260302_pr4_admin.sql`
 3. `supabase/migrations/20260302_pr42_add_soft_delete.sql`
 4. `supabase/migrations/20260302_pr5_geocode_cache.sql`
-5. `supabase/seed.sql` (opcional)
+5. `supabase/migrations/20260303_pr52_profiles_fallback.sql`
+6. `supabase/seed.sql` (opcional)
+
+Correr migración profiles en Supabase.
 
 ## Qué hace PR5
 
