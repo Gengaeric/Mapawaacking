@@ -114,8 +114,8 @@ export async function listPeople(
       callParts.push(`.eq("province", ${JSON.stringify(options.province)})`);
     }
     if (options?.crew) {
-      query.ilike("crew_or_club", `*${options.crew}*`);
-      callParts.push(`.ilike("crew_or_club", ${JSON.stringify(`*${options.crew}*`)})`);
+      query.ilike("crew_or_club", `%${options.crew}%`);
+      callParts.push(`.ilike("crew_or_club", ${JSON.stringify(`%${options.crew}%`)})`);
     }
     if (typeof options?.startYear === "number") {
       query.eq("start_year", options.startYear);
@@ -139,7 +139,7 @@ export async function listPeople(
     return applyBaseFilters().execute();
   }
 
-  const searchPattern = `*${options.q}*`;
+  const searchPattern = `%${options.q}%`;
   const [byFullName, byStageName] = await Promise.all([
     applyBaseFilters().ilike("full_name", searchPattern).execute(),
     applyBaseFilters().ilike("stage_name", searchPattern).execute()
@@ -220,8 +220,8 @@ export async function listEvents(
     callParts.push(`.eq("event_type", ${JSON.stringify(options.eventType)})`);
   }
   if (options?.q) {
-    query.ilike("name", `*${options.q}*`);
-    callParts.push(`.ilike("name", ${JSON.stringify(`*${options.q}*`)})`);
+    query.ilike("name", `%${options.q}%`);
+    callParts.push(`.ilike("name", ${JSON.stringify(`%${options.q}%`)})`);
   }
 
   options?.debugCalls?.push(callParts.join(""));

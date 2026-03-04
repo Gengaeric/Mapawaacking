@@ -25,7 +25,7 @@ class RestQueryBuilder<T> {
   }
 
   eq(column: string, value: Primitive) {
-    this.params.set(column, `eq.${encodeFilterValue(value)}`);
+    this.params.append(column, `eq.${encodeFilterValue(value)}`);
     return this;
   }
 
@@ -37,17 +37,17 @@ class RestQueryBuilder<T> {
   }
 
   ilike(column: string, value: string) {
-    this.params.set(column, `ilike.${encodeFilterValue(value)}`);
+    this.params.append(column, `ilike.${encodeFilterValue(value)}`);
     return this;
   }
 
   gte(column: string, value: Primitive) {
-    this.params.set(column, `gte.${encodeFilterValue(value)}`);
+    this.params.append(column, `gte.${encodeFilterValue(value)}`);
     return this;
   }
 
   lte(column: string, value: Primitive) {
-    this.params.set(column, `lte.${encodeFilterValue(value)}`);
+    this.params.append(column, `lte.${encodeFilterValue(value)}`);
     return this;
   }
 
