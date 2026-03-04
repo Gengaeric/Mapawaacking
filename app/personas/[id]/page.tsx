@@ -33,7 +33,7 @@ export default async function PersonaDetallePage({ params }: { params: Promise<{
         id={id}
         initialSummary={person.ai_summary}
         hasSourceText={Boolean(person.biography?.trim())}
-        canRegenerate={viewer.showAdminUi}
+        canSummarize={Boolean(viewer.user)}
       />
 
       {viewer.showAdminUi ? (
