@@ -7,10 +7,9 @@ type Props = {
   id: string;
   initialSummary: string | null;
   hasSourceText: boolean;
-  canRegenerate: boolean;
 };
 
-export function AiSummarySection({ type, id, initialSummary, hasSourceText, canRegenerate }: Props) {
+export function AiSummarySection({ type, id, initialSummary, hasSourceText }: Props) {
   const [summary, setSummary] = useState(initialSummary);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -48,12 +47,12 @@ export function AiSummarySection({ type, id, initialSummary, hasSourceText, canR
       {error ? <p>{error}</p> : null}
       {!summary ? (
         <button type="button" onClick={() => requestSummary()} disabled={loading || !hasSourceText}>
-          {loading ? "Resumiendo..." : "Resumir con IA"}
+          {loading ? "Generando resumen…" : "Resumir con IA"}
         </button>
       ) : null}
-      {summary && canRegenerate ? (
+      {summary ? (
         <button type="button" onClick={() => requestSummary(true)} disabled={loading || !hasSourceText}>
-          {loading ? "Regenerando..." : "Regenerar resumen"}
+          {loading ? "Generando resumen…" : "Regenerar resumen"}
         </button>
       ) : null}
       {!hasSourceText ? <p>No hay texto suficiente para resumir</p> : null}
