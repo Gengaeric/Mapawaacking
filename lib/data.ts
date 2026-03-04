@@ -1,5 +1,6 @@
 import type { Json } from "@/lib/supabase/db";
 import { dbDelete, dbInsert, dbSelect, dbUpdate, dbUpsert } from "@/lib/supabase/db";
+import { fromTable } from "@/lib/supabase/query-builder";
 
 export function isMissingProfilesTableError(error: unknown): boolean {
   if (!(error instanceof Error)) return false;
@@ -86,34 +87,46 @@ export type GeocodeCache = {
   updated_at: string;
 };
 
-function appendQuery(filters: string[], column: string, operator: "eq" | "ilike", value?: string) {
-  if (!value) return;
-  const encoded = encodeURIComponent(operator === "ilike" ? `*${value}*` : value);
-  filters.push(`${column}=${operator}.${encoded}`);
-}
-
 export async function listPeople(
   includeDeleted = false,
   options?: {
     province?: string;
     crew?: string;
     q?: string;
+    startYear?: number;
+    startYearFrom?: number;
+    startYearTo?: number;
   }
 ) {
-  const filters = ["select=*", "order=created_at.desc"];
+  const applyBaseFilters = () => {
+    const query = fromTable<Person>("people").select("*").order("created_at", { ascending: false });
 
-  if (!includeDeleted) {
-    filters.push("is_deleted=eq.false");
+    if (!includeDeleted) query.eq("is_deleted", false);
+    if (options?.province) query.eq("province", options.province);
+    if (options?.crew) query.ilike("crew_or_club", `*${options.crew}*`);
+    if (typeof options?.startYear === "number") query.eq("start_year", options.startYear);
+    if (typeof options?.startYearFrom === "number") query.gte("start_year", options.startYearFrom);
+    if (typeof options?.startYearTo === "number") query.lte("start_year", options.startYearTo);
+
+    return query;
+  };
+
+  if (!options?.q) {
+    return applyBaseFilters().execute();
   }
 
-  appendQuery(filters, "province", "eq", options?.province);
-  appendQuery(filters, "crew_or_club", "eq", options?.crew);
-  if (options?.q) {
-    const encoded = encodeURIComponent(`*${options.q}*`);
-    filters.push(`or=(full_name.ilike.${encoded},stage_name.ilike.${encoded})`);
+  const searchPattern = `*${options.q}*`;
+  const [byFullName, byStageName] = await Promise.all([
+    applyBaseFilters().ilike("full_name", searchPattern).execute(),
+    applyBaseFilters().ilike("stage_name", searchPattern).execute()
+  ]);
+
+  const uniquePeople = new Map<string, Person>();
+  for (const person of [...byFullName, ...byStageName]) {
+    uniquePeople.set(person.id, person);
   }
 
-  return dbSelect<Person>("people", filters.join("&"));
+  return [...uniquePeople.values()].sort((a, b) => b.created_at.localeCompare(a.created_at));
 }
 
 export async function getPerson(id: string) {
@@ -159,17 +172,14 @@ export async function listEvents(
     q?: string;
   }
 ) {
-  const filters = ["select=*", "order=created_at.desc"];
+  const query = fromTable<Event>("events").select("*").order("created_at", { ascending: false });
 
-  if (!includeDeleted) {
-    filters.push("is_deleted=eq.false");
-  }
+  if (!includeDeleted) query.eq("is_deleted", false);
+  if (options?.province) query.eq("province", options.province);
+  if (options?.eventType) query.eq("event_type", options.eventType);
+  if (options?.q) query.ilike("name", `*${options.q}*`);
 
-  appendQuery(filters, "province", "eq", options?.province);
-  appendQuery(filters, "event_type", "eq", options?.eventType);
-  appendQuery(filters, "name", "ilike", options?.q);
-
-  return dbSelect<Event>("events", filters.join("&"));
+  return query.execute();
 }
 
 export async function getEvent(id: string) {
