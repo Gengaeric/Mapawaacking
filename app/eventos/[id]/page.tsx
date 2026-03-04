@@ -46,7 +46,7 @@ export default async function EventoDetallePage({ params }: { params: Promise<{ 
         id={id}
         initialSummary={event.ai_summary}
         hasSourceText={Boolean(event.description?.trim())}
-        canRegenerate={viewer.showAdminUi}
+        canSummarize={Boolean(viewer.user)}
       />
 
       <section>

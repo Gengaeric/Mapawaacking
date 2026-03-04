@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { summarizeInSpanish } from "@/lib/ai/summarize";
-import { ensureUserProfile } from "@/lib/auth/server-roles";
 import { getEvent, getPerson, updateEvent, updatePerson } from "@/lib/data";
 import { getCurrentUser } from "@/lib/supabase/server";
 
@@ -12,7 +11,7 @@ type SummarizeBody = {
 
 export async function POST(request: Request) {
   const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ ok: false, error: "FORBIDDEN" }, { status: 403 });
+  if (!user) return NextResponse.json({ ok: false, error: "No autenticado" }, { status: 401 });
 
   const body = (await request.json()) as SummarizeBody;
   const type = body.type;
@@ -26,12 +25,6 @@ export async function POST(request: Request) {
     );
   }
 
-  const role = await ensureUserProfile(user);
-  const canRegenerate = role === "admin";
-
-  if (force && !canRegenerate) {
-    return NextResponse.json({ ok: false, error: "FORBIDDEN" }, { status: 403 });
-  }
 
   if (type === "person") {
     const record = await getPerson(id);
@@ -42,7 +35,7 @@ export async function POST(request: Request) {
     const sourceText = (record.biography ?? "").trim();
     if (!sourceText) {
       return NextResponse.json(
-        { ok: false, error: "No hay texto suficiente para resumir" },
+        { ok: false, error: "No hay texto suficiente para resumir." },
         { status: 400 }
       );
     }
@@ -65,7 +58,7 @@ export async function POST(request: Request) {
   const sourceText = (record.description ?? "").trim();
   if (!sourceText) {
     return NextResponse.json(
-      { ok: false, error: "No hay texto suficiente para resumir" },
+      { ok: false, error: "No hay texto suficiente para resumir." },
       { status: 400 }
     );
   }
