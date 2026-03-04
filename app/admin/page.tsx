@@ -97,7 +97,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
   try {
     const tab = params.tab ?? "contenido";
     const tipo = params.tipo ?? "personas";
-    const { q: query, province, crew, eventType, includeDeleted } = buildAdminFilters(params);
+    const { q: query, province, crew, eventType, startYear, startYearFrom, startYearTo, includeDeleted } = buildAdminFilters(params);
     const auditEntity = params.entidad ?? "";
     const auditAction = params.accion ?? "";
     const auditActor = (params.actor ?? "").toLowerCase();
@@ -105,7 +105,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     const auditTo = params.hasta ?? "";
 
     const [people, events, profilesResult] = await Promise.all([
-      listPeople(includeDeleted, { province, crew, q: query }),
+      listPeople(includeDeleted, { province, crew, q: query, startYear, startYearFrom, startYearTo }),
       listEvents(includeDeleted, { province, eventType, q: query }),
       listProfiles()
         .then((profiles) => ({ profiles, missingProfilesTable: false }))
@@ -175,7 +175,10 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
               <input type="hidden" name="tipo" value={tipo} />
               <input name="q" placeholder="Buscar" defaultValue={params.q} />
               <input name="provincia" placeholder="Provincia" defaultValue={province} />
-              {tipo === "personas" ? <input name="crew" placeholder="Crew" defaultValue={crew} /> : <input name="tipoEvento" placeholder="Tipo evento" defaultValue={eventType} />}
+              {tipo === "personas" ? (<>
+                <input name="crew" placeholder="Crew" defaultValue={crew} />
+                <input name="start_year" placeholder="Año inicio (ej: 2010 o 2010-2015)" defaultValue={params.start_year} />
+              </>) : <input name="tipoEvento" placeholder="Tipo evento" defaultValue={eventType} />}
               <label><input type="checkbox" name="eliminados" value="1" defaultChecked={includeDeleted} /> Incluir ocultos</label>
               <button type="submit">Filtrar</button>
             </form>
