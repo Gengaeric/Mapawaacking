@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { BackfillGeocodesButton } from "@/app/admin/backfill-geocodes-button";
+import { buildAdminFilters } from "@/app/admin/build-admin-filters";
 import { deleteEventAction, deletePersonAction, restoreEventAction, restorePersonAction } from "@/app/contenido/actions";
 import { UsersManager } from "@/app/admin/users-manager";
 import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
@@ -96,11 +97,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
   try {
     const tab = params.tab ?? "contenido";
     const tipo = params.tipo ?? "personas";
-    const query = (params.q ?? "").toLowerCase();
-    const province = params.provincia ?? "";
-    const crew = params.crew ?? "";
-    const eventType = params.tipoEvento ?? "";
-    const includeDeleted = params.eliminados === "1";
+    const { q: query, province, crew, eventType, includeDeleted } = buildAdminFilters(params);
     const auditEntity = params.entidad ?? "";
     const auditAction = params.accion ?? "";
     const auditActor = (params.actor ?? "").toLowerCase();
@@ -108,8 +105,8 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     const auditTo = params.hasta ?? "";
 
     const [people, events, profilesResult] = await Promise.all([
-      listPeople(true),
-      listEvents(true),
+      listPeople(includeDeleted, { province, crew, q: query }),
+      listEvents(includeDeleted, { province, eventType, q: query }),
       listProfiles()
         .then((profiles) => ({ profiles, missingProfilesTable: false }))
         .catch((error) => {
@@ -121,22 +118,6 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     ]);
     const profiles = profilesResult.profiles;
     const missingProfilesTable = profilesResult.missingProfilesTable;
-
-    const filteredPeople = people.filter((p) => {
-      if (!includeDeleted && p.is_deleted) return false;
-      if (query && !`${p.full_name} ${p.stage_name ?? ""}`.toLowerCase().includes(query)) return false;
-      if (province && p.province !== province) return false;
-      if (crew && (p.crew_or_club ?? "") !== crew) return false;
-      return true;
-    });
-
-    const filteredEvents = events.filter((e) => {
-      if (!includeDeleted && e.is_deleted) return false;
-      if (query && !e.name.toLowerCase().includes(query)) return false;
-      if (province && e.province !== province) return false;
-      if (eventType && e.event_type !== eventType) return false;
-      return true;
-    });
 
     const profileById = new Map(profiles.map((p) => [p.user_id, p.email]));
 
@@ -201,7 +182,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
 
             {tipo === "personas" ? (
               <table><thead><tr><th>Nombre artístico</th><th>Provincia</th><th>Ciudad</th><th>Inicio</th><th>Crew</th><th>Creado por</th><th>Fecha</th><th>Acciones</th></tr></thead><tbody>
-                {filteredPeople.map((p) => (
+                {people.map((p) => (
                   <tr key={p.id}>
                     <td>{p.stage_name ?? p.full_name}</td><td>{p.province}</td><td>{p.city}</td><td>{p.start_year}</td><td>{p.crew_or_club ?? "—"}</td><td>{profileById.get(p.user_id ?? "") ?? p.user_id ?? "—"}</td><td>{new Date(p.created_at).toLocaleDateString("es-AR")}</td>
                     <td>
@@ -213,7 +194,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
               </tbody></table>
             ) : (
               <table><thead><tr><th>Nombre</th><th>Tipo</th><th>Provincia</th><th>Ciudad</th><th>Recurrente</th><th>Creado por</th><th>Fecha</th><th>Acciones</th></tr></thead><tbody>
-                {filteredEvents.map((e) => (
+                {events.map((e) => (
                   <tr key={e.id}><td>{e.name}</td><td>{e.event_type}</td><td>{e.province}</td><td>{e.city}</td><td>{e.is_recurring ? "Sí" : "No"}</td><td>{profileById.get(e.created_by ?? "") ?? e.created_by ?? "—"}</td><td>{new Date(e.created_at).toLocaleDateString("es-AR")}</td>
                   <td><Link href={`/eventos/${e.id}`}>Ver</Link> <Link href={`/eventos/${e.id}/editar`}>Editar</Link>{e.is_deleted ? <form action={restoreEventAction} style={{ display: "inline" }}><input type="hidden" name="id" value={e.id} /><button type="submit">Restaurar</button></form> : <form action={deleteEventAction} style={{ display: "inline" }}><input type="hidden" name="id" value={e.id} /><ConfirmSubmitButton label="Ocultar" message="¿Ocultar evento?" /></form>}</td></tr>
                 ))}
