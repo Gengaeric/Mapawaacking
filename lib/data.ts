@@ -19,6 +19,7 @@ export type Person = {
   longitude: number | null;
   start_year: number;
   biography: string | null;
+  ai_summary: string | null;
   profile_image_data_uri: string | null;
   social_links: Record<string, string>;
   crew_or_club: string | null;
@@ -38,6 +39,7 @@ export type Event = {
   latitude: number | null;
   longitude: number | null;
   description: string | null;
+  ai_summary: string | null;
   cover_image_data_uri: string | null;
   gallery_images_data_uri: string[];
   links: Record<string, string>;
