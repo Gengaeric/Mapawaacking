@@ -22,6 +22,12 @@ function parseFilterValue(value?: string) {
   }
 }
 
+function parseProvince(value?: string) {
+  const parsed = parseFilterValue(value);
+  if (!parsed) return "";
+  return /^[\p{L}\s]+$/u.test(parsed) ? parsed : "";
+}
+
 export function buildAdminFilters(params: Record<string, string | undefined>): AdminFilters {
   const startYearRaw = parseFilterValue(params.start_year);
   const startYearFromRaw = parseFilterValue(params.start_year_from);
@@ -42,7 +48,7 @@ export function buildAdminFilters(params: Record<string, string | undefined>): A
 
   return {
     q: parseFilterValue(params.q).toLowerCase(),
-    province: parseFilterValue(params.provincia),
+    province: parseProvince(params.provincia),
     crew: parseFilterValue(params.crew),
     eventType: parseFilterValue(params.tipoEvento),
     startYear: parsedStartYear,
