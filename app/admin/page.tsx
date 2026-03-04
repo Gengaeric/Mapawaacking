@@ -97,7 +97,17 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
   try {
     const tab = params.tab ?? "contenido";
     const tipo = params.tipo ?? "personas";
-    const { q: query, province, crew, eventType, startYear, startYearFrom, startYearTo, includeDeleted } = buildAdminFilters(params);
+    const parsedFilters = buildAdminFilters(params);
+    const {
+      q: query,
+      province,
+      crew,
+      eventType,
+      startYear,
+      startYearFrom,
+      startYearTo,
+      includeDeleted
+    } = parsedFilters;
     const auditEntity = params.entidad ?? "";
     const auditAction = params.accion ?? "";
     const auditActor = (params.actor ?? "").toLowerCase();
@@ -120,9 +130,10 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     const missingProfilesTable = profilesResult.missingProfilesTable;
 
     const profileById = new Map(profiles.map((p) => [p.user_id, p.email]));
+    const showProductionFilterDebug = process.env.NODE_ENV === "production" && debugMode;
 
     const [auditRows, totalPeople, totalEvents, totalEditions, totalParticipation, peopleByProvince, peopleByYear, eventsByType, eventsByProvince] = await Promise.all([
-      listAuditLogs(`select=*&order=created_at.desc&limit=200`),
+      listAuditLogs(),
       dbSelect<{ count: number }>("people", "select=count:id&is_deleted=eq.false"),
       dbSelect<{ count: number }>("events", "select=count:id&is_deleted=eq.false"),
       dbSelect<{ count: number }>("event_editions", "select=count:id"),
@@ -148,6 +159,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     return (
       <main className="auth-layout">
         <h1>Panel de administración</h1>
+        {showProductionFilterDebug ? (<p data-debug-filters>debug.filters.parsed: {JSON.stringify(parsedFilters)}</p>) : null}
         <p>Rol actual: {role}</p>
         {missingProfilesTable ? (
           <section style={{ border: "1px solid #f59e0b", borderRadius: 8, padding: 12, background: "#fffbeb" }}>

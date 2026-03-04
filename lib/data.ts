@@ -1,5 +1,5 @@
 import type { Json } from "@/lib/supabase/db";
-import { dbDelete, dbInsert, dbSelect, dbUpdate, dbUpsert } from "@/lib/supabase/db";
+import { dbDelete, dbInsert, dbUpdate, dbUpsert } from "@/lib/supabase/db";
 import { fromTable } from "@/lib/supabase/query-builder";
 
 export function isMissingProfilesTableError(error: unknown): boolean {
@@ -130,7 +130,7 @@ export async function listPeople(
 }
 
 export async function getPerson(id: string) {
-  const rows = await dbSelect<Person>("people", `select=*&id=eq.${id}&limit=1`);
+  const rows = await fromTable<Person>("people").select("*").eq("id", id).range(0, 0).execute();
   return rows[0] ?? null;
 }
 
@@ -183,7 +183,7 @@ export async function listEvents(
 }
 
 export async function getEvent(id: string) {
-  const rows = await dbSelect<Event>("events", `select=*&id=eq.${id}&limit=1`);
+  const rows = await fromTable<Event>("events").select("*").eq("id", id).range(0, 0).execute();
   return rows[0] ?? null;
 }
 
@@ -218,11 +218,11 @@ export async function restoreEvent(id: string) {
 }
 
 export async function listEditionsByEvent(eventId: string) {
-  return dbSelect<Edition>("event_editions", `select=*&event_id=eq.${eventId}&order=year.asc`);
+  return fromTable<Edition>("event_editions").select("*").eq("event_id", eventId).order("year").execute();
 }
 
 export async function listAllEditions() {
-  return dbSelect<Edition>("event_editions", "select=*&order=year.asc");
+  return fromTable<Edition>("event_editions").select("*").order("year").execute();
 }
 
 export async function createEdition(payload: Partial<Edition>) {
@@ -231,23 +231,23 @@ export async function createEdition(payload: Partial<Edition>) {
 }
 
 export async function getEdition(id: string) {
-  const rows = await dbSelect<Edition>("event_editions", `select=*&id=eq.${id}&limit=1`);
+  const rows = await fromTable<Edition>("event_editions").select("*").eq("id", id).range(0, 0).execute();
   return rows[0] ?? null;
 }
 
 export async function listParticipationsByEdition(editionId: string) {
-  return dbSelect<Participation>("participation", `select=*&edition_id=eq.${editionId}`);
+  return fromTable<Participation>("participation").select("*").eq("edition_id", editionId).execute();
 }
 
 export async function listParticipationsByPerson(personId: string) {
-  return dbSelect<Participation>("participation", `select=*&person_id=eq.${personId}`);
+  return fromTable<Participation>("participation").select("*").eq("person_id", personId).execute();
 }
 
 export async function listParticipationsByEvent(eventId: string) {
-  return dbSelect<Participation>(
-    "participation",
-    `select=*,event_editions!inner(id,event_id,year,date)&event_editions.event_id=eq.${eventId}`
-  );
+  return fromTable<Participation>("participation")
+    .select("*,event_editions!inner(id,event_id,year,date)")
+    .eq("event_editions.event_id", eventId)
+    .execute();
 }
 
 export async function replaceParticipations(personId: string, editionIds: string[]) {
@@ -271,8 +271,7 @@ export async function insertAuditLog(payload: {
 }
 
 export async function getGeocodeCacheByQuery(query: string) {
-  const encoded = encodeURIComponent(query);
-  const rows = await dbSelect<GeocodeCache>("geocode_cache", `select=*&query=eq.${encoded}&limit=1`);
+  const rows = await fromTable<GeocodeCache>("geocode_cache").select("*").eq("query", query).range(0, 0).execute();
   return rows[0] ?? null;
 }
 
@@ -289,16 +288,20 @@ export async function upsertGeocodeCache(payload: {
   return rows[0] as GeocodeCache;
 }
 
-export async function listAuditLogs(query: string) {
-  return dbSelect<Record<string, Json>>("audit_log", query);
+export async function listAuditLogs(limit = 200) {
+  return fromTable<Record<string, Json>>("audit_log")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .range(0, Math.max(0, limit - 1))
+    .execute();
 }
 
 export async function listProfiles() {
-  return dbSelect<Profile>("profiles", "select=*&order=created_at.desc");
+  return fromTable<Profile>("profiles").select("*").order("created_at", { ascending: false }).execute();
 }
 
 export async function getProfile(userId: string) {
-  const rows = await dbSelect<Profile>("profiles", `select=*&user_id=eq.${userId}&limit=1`);
+  const rows = await fromTable<Profile>("profiles").select("*").eq("user_id", userId).range(0, 0).execute();
   return rows[0] ?? null;
 }
 
