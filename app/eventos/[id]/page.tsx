@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createEditionAction, deleteEventAction } from "@/app/contenido/actions";
-import { AiSummarySection } from "@/components/ai-summary-section";
+import { EventAiSummary } from "./ai-summary";
 import {
   getEvent,
   listEditionsByEvent,
@@ -41,8 +41,7 @@ export default async function EventoDetallePage({ params }: { params: Promise<{ 
       {!event.latitude || !event.longitude ? <p>No pudimos ubicar esta ciudad/provincia.</p> : null}
       <p>{event.description}</p>
 
-      <AiSummarySection
-        type="event"
+      <EventAiSummary
         id={id}
         initialSummary={event.ai_summary}
         hasSourceText={Boolean(event.description?.trim())}
