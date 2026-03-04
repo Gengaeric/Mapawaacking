@@ -3,18 +3,24 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { deletePersonAction, updatePersonParticipationAction } from "@/app/contenido/actions";
+import { AiSummarySection } from "@/components/ai-summary-section";
+import { ensureUserProfile } from "@/lib/auth/server-roles";
 import { getPerson, listAllEditions, listEvents, listParticipationsByPerson } from "@/lib/data";
+import { getCurrentUser } from "@/lib/supabase/server";
 
 export default async function PersonaDetallePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const person = await getPerson(id);
   if (!person) notFound();
 
-  const [allEditions, participations, events] = await Promise.all([
+  const [allEditions, participations, events, user] = await Promise.all([
     listAllEditions(),
     listParticipationsByPerson(person.id),
-    listEvents()
+    listEvents(),
+    getCurrentUser()
   ]);
+  const role = user ? await ensureUserProfile(user) : "usuario";
+  const canRegenerate = role === "admin" || role === "moderador";
   const selected = new Set(participations.map((p) => p.edition_id).filter(Boolean));
   const eventMap = new Map(events.map((event) => [event.id, event.name]));
 
@@ -26,6 +32,14 @@ export default async function PersonaDetallePage({ params }: { params: Promise<{
       {!person.latitude || !person.longitude ? <p>No pudimos ubicar esta ciudad/provincia.</p> : null}
       <p>Año inicio: {person.start_year}</p>
       <p>{person.biography}</p>
+
+      <AiSummarySection
+        type="person"
+        id={person.id}
+        initialSummary={person.ai_summary}
+        hasSourceText={Boolean(person.biography?.trim())}
+        canRegenerate={canRegenerate}
+      />
 
       <section>
         <h2>Participación</h2>

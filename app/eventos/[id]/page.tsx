@@ -3,19 +3,24 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createEditionAction, deleteEventAction } from "@/app/contenido/actions";
+import { AiSummarySection } from "@/components/ai-summary-section";
+import { ensureUserProfile } from "@/lib/auth/server-roles";
 import {
   getEvent,
   listEditionsByEvent,
   listParticipationsByEdition,
   listPeople
 } from "@/lib/data";
+import { getCurrentUser } from "@/lib/supabase/server";
 
 export default async function EventoDetallePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const event = await getEvent(id);
   if (!event) notFound();
 
-  const [editions, people] = await Promise.all([listEditionsByEvent(event.id), listPeople()]);
+  const [editions, people, user] = await Promise.all([listEditionsByEvent(event.id), listPeople(), getCurrentUser()]);
+  const role = user ? await ensureUserProfile(user) : "usuario";
+  const canRegenerate = role === "admin" || role === "moderador";
   const peopleMap = new Map(people.map((person) => [person.id, person.full_name]));
   const participationsByEdition = await Promise.all(
     editions.map(async (edition) => ({
@@ -39,6 +44,14 @@ export default async function EventoDetallePage({ params }: { params: Promise<{ 
       </p>
       {!event.latitude || !event.longitude ? <p>No pudimos ubicar esta ciudad/provincia.</p> : null}
       <p>{event.description}</p>
+
+      <AiSummarySection
+        type="event"
+        id={event.id}
+        initialSummary={event.ai_summary}
+        hasSourceText={Boolean(event.description?.trim())}
+        canRegenerate={canRegenerate}
+      />
 
       <section>
         <h2>Ediciones</h2>
