@@ -43,7 +43,7 @@ export default async function EventoDetallePage({ params }: { params: Promise<{ 
 
       <AiSummarySection
         type="event"
-        id={event.id}
+        id={id}
         initialSummary={event.ai_summary}
         hasSourceText={Boolean(event.description?.trim())}
       />

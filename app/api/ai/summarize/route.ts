@@ -48,7 +48,7 @@ export async function POST(request: Request) {
 
   const existingSummary = record.ai_summary?.trim();
   if (existingSummary && !force) {
-    return NextResponse.json({ ok: true, summary: existingSummary, fromCache: true });
+    return NextResponse.json({ ok: true, summary: existingSummary, ai_summary: existingSummary, fromCache: true });
   }
 
   const summary = await summarizeInSpanish(sourceText);
@@ -59,5 +59,5 @@ export async function POST(request: Request) {
     await updateEvent(id, { ai_summary: summary });
   }
 
-  return NextResponse.json({ ok: true, summary, fromCache: false });
+  return NextResponse.json({ ok: true, summary, ai_summary: summary, fromCache: false });
 }

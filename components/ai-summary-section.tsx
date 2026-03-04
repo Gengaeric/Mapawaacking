@@ -9,12 +9,19 @@ type Props = {
   hasSourceText: boolean;
 };
 
+type SummarizeResponse = {
+  ok: boolean;
+  summary?: string;
+  ai_summary?: string;
+  error?: string;
+};
+
 export function AiSummarySection({ type, id, initialSummary, hasSourceText }: Props) {
   const [summary, setSummary] = useState(initialSummary);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function requestSummary(force = false) {
+  async function requestSummary() {
     setLoading(true);
     setError(null);
 
@@ -22,17 +29,18 @@ export function AiSummarySection({ type, id, initialSummary, hasSourceText }: Pr
       const response = await fetch("/api/ai/summarize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type, id, force })
+        body: JSON.stringify({ type, id })
       });
 
-      const data = (await response.json()) as { ok: boolean; summary?: string; error?: string };
+      const data = (await response.json()) as SummarizeResponse;
+      const returnedSummary = data.ai_summary ?? data.summary;
 
-      if (!response.ok || !data.ok || !data.summary) {
+      if (!response.ok || !data.ok || !returnedSummary) {
         setError(data.error ?? "No se pudo generar el resumen.");
         return;
       }
 
-      setSummary(data.summary);
+      setSummary(returnedSummary);
     } catch {
       setError("No se pudo generar el resumen.");
     } finally {
@@ -42,19 +50,11 @@ export function AiSummarySection({ type, id, initialSummary, hasSourceText }: Pr
 
   return (
     <section>
-      <h2>Resumen IA</h2>
       {summary ? <p style={{ whiteSpace: "pre-line" }}>{summary}</p> : null}
       {error ? <p>{error}</p> : null}
-      {!summary ? (
-        <button type="button" onClick={() => requestSummary()} disabled={loading || !hasSourceText}>
-          {loading ? "Generando resumen…" : "Resumir con IA"}
-        </button>
-      ) : null}
-      {summary ? (
-        <button type="button" onClick={() => requestSummary(true)} disabled={loading || !hasSourceText}>
-          {loading ? "Generando resumen…" : "Regenerar resumen"}
-        </button>
-      ) : null}
+      <button type="button" onClick={requestSummary} disabled={loading || !hasSourceText}>
+        {loading ? "Generando resumen..." : summary ? "Regenerar resumen" : "Resumir con IA"}
+      </button>
       {!hasSourceText ? <p>No hay texto suficiente para resumir</p> : null}
     </section>
   );

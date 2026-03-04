@@ -30,7 +30,7 @@ export default async function PersonaDetallePage({ params }: { params: Promise<{
 
       <AiSummarySection
         type="person"
-        id={person.id}
+        id={id}
         initialSummary={person.ai_summary}
         hasSourceText={Boolean(person.biography?.trim())}
       />
