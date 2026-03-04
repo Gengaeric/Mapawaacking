@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { deletePersonAction, updatePersonParticipationAction } from "@/app/contenido/actions";
-import { AiSummarySection } from "@/components/ai-summary-section";
+import { PersonAiSummary } from "./ai-summary";
 import { getPerson, listAllEditions, listEvents, listParticipationsByPerson } from "@/lib/data";
 
 export default async function PersonaDetallePage({ params }: { params: Promise<{ id: string }> }) {
@@ -28,8 +28,7 @@ export default async function PersonaDetallePage({ params }: { params: Promise<{
       <p>Año inicio: {person.start_year}</p>
       <p>{person.biography}</p>
 
-      <AiSummarySection
-        type="person"
+      <PersonAiSummary
         id={id}
         initialSummary={person.ai_summary}
         hasSourceText={Boolean(person.biography?.trim())}
