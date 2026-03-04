@@ -1,6 +1,9 @@
 "use server";
 
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { ADMIN_VIEW_MODE_COOKIE, type AdminViewMode } from "@/lib/auth/admin-view-mode";
+import { resolveUserRole } from "@/lib/auth/roles";
 import { ensureUserProfile, upsertBasicProfileOnLogin } from "@/lib/auth/server-roles";
 import { getCurrentUser, signInWithPassword, signOut, signUp } from "@/lib/supabase/server";
 
@@ -46,5 +49,32 @@ export async function register(formData: FormData) {
 
 export async function logout() {
   await signOut();
+  const cookieStore = await cookies();
+  cookieStore.delete(ADMIN_VIEW_MODE_COOKIE);
   redirect("/");
+}
+
+export async function setAdminViewModeAction(formData: FormData) {
+  const requestedMode = String(formData.get("mode") ?? "") as AdminViewMode;
+  const headerStore = await headers();
+  const returnTo = String(formData.get("returnTo") ?? headerStore.get("referer") ?? "/");
+  const user = await getCurrentUser();
+  const role = resolveUserRole(user?.email, user?.app_metadata?.role);
+
+  if (role !== "admin") {
+    redirect(returnTo);
+  }
+
+  if (requestedMode !== "admin" && requestedMode !== "user") {
+    redirect(returnTo);
+  }
+
+  const cookieStore = await cookies();
+  cookieStore.set(ADMIN_VIEW_MODE_COOKIE, requestedMode, {
+    path: "/",
+    sameSite: "lax",
+    httpOnly: true
+  });
+
+  redirect(returnTo);
 }

@@ -10,13 +10,13 @@ export async function requireUser() {
 
 export function canManageAll(email: string | undefined, roleMetadata: unknown) {
   const role = resolveUserRole(email, roleMetadata);
-  return role === "admin" || role === "moderador";
+  return role === "admin";
 }
 
 export async function getManagePermissionFromUser() {
   const user = await requireUser();
   const role = await ensureUserProfile(user);
-  return { user, role, canManage: role === "admin" || role === "moderador" };
+  return { user, role, canManage: role === "admin" };
 }
 
 export function canEditOwnerResource(

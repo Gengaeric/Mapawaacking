@@ -6,6 +6,7 @@ type Props = {
   id: string;
   initialSummary: string | null;
   hasSourceText: boolean;
+  canRegenerate: boolean;
 };
 
 type SummarizeResponse = {
@@ -15,7 +16,7 @@ type SummarizeResponse = {
   error?: string;
 };
 
-export function EventAiSummary({ id, initialSummary, hasSourceText }: Props) {
+export function EventAiSummary({ id, initialSummary, hasSourceText, canRegenerate }: Props) {
   const [summary, setSummary] = useState(initialSummary);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -28,7 +29,7 @@ export function EventAiSummary({ id, initialSummary, hasSourceText }: Props) {
       const response = await fetch("/api/ai/summarize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: "event", id })
+        body: JSON.stringify({ type: "event", id, force: Boolean(summary) })
       });
 
       const data = (await response.json()) as SummarizeResponse;
@@ -51,10 +52,14 @@ export function EventAiSummary({ id, initialSummary, hasSourceText }: Props) {
     <section>
       {summary ? <p style={{ whiteSpace: "pre-line" }}>{summary}</p> : null}
       {error ? <p>{error}</p> : null}
-      <button type="button" onClick={requestSummary} disabled={loading || !hasSourceText}>
-        {loading ? "Generando resumen..." : summary ? "Regenerar resumen" : "Resumir con IA"}
-      </button>
-      {!hasSourceText ? <p>No hay texto suficiente para resumir</p> : null}
+      {canRegenerate ? (
+        <>
+          <button type="button" onClick={requestSummary} disabled={loading || !hasSourceText}>
+            {loading ? "Generando resumen..." : summary ? "Regenerar resumen" : "Resumir con IA"}
+          </button>
+          {!hasSourceText ? <p>No hay texto suficiente para resumir</p> : null}
+        </>
+      ) : null}
     </section>
   );
 }

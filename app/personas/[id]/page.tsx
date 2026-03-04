@@ -4,11 +4,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { deletePersonAction, updatePersonParticipationAction } from "@/app/contenido/actions";
 import { PersonAiSummary } from "./ai-summary";
+import { getViewerContext } from "@/lib/auth/viewer-context";
 import { getPerson, listAllEditions, listEvents, listParticipationsByPerson } from "@/lib/data";
 
 export default async function PersonaDetallePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const person = await getPerson(id);
+  const [person, viewer] = await Promise.all([getPerson(id), getViewerContext()]);
   if (!person) notFound();
 
   const [allEditions, participations, events] = await Promise.all([
@@ -32,34 +33,41 @@ export default async function PersonaDetallePage({ params }: { params: Promise<{
         id={id}
         initialSummary={person.ai_summary}
         hasSourceText={Boolean(person.biography?.trim())}
+        canRegenerate={viewer.showAdminUi}
       />
 
-      <section>
-        <h2>Participación</h2>
-        <form action={updatePersonParticipationAction} className="auth-form">
-          <input type="hidden" name="person_id" value={person.id} />
-          {allEditions.map((edition) => (
-            <label key={edition.id}>
-              <input
-                type="checkbox"
-                name="edition_ids"
-                value={edition.id}
-                defaultChecked={selected.has(edition.id)}
-              />
-              {eventMap.get(edition.event_id) ?? "Evento"} — {edition.year}
-            </label>
-          ))}
-          <button type="submit">Guardar participación</button>
-        </form>
-      </section>
+      {viewer.showAdminUi ? (
+        <section>
+          <h2>Participación</h2>
+          <form action={updatePersonParticipationAction} className="auth-form">
+            <input type="hidden" name="person_id" value={person.id} />
+            {allEditions.map((edition) => (
+              <label key={edition.id}>
+                <input
+                  type="checkbox"
+                  name="edition_ids"
+                  value={edition.id}
+                  defaultChecked={selected.has(edition.id)}
+                />
+                {eventMap.get(edition.event_id) ?? "Evento"} — {edition.year}
+              </label>
+            ))}
+            <button type="submit">Guardar participación</button>
+          </form>
+        </section>
+      ) : null}
 
-      <p>
-        <Link href={`/personas/${person.id}/editar`}>Editar</Link>
-      </p>
-      <form action={deletePersonAction}>
-        <input type="hidden" name="id" value={person.id} />
-        <button type="submit">Eliminar</button>
-      </form>
+      {viewer.showAdminUi ? (
+        <>
+          <p>
+            <Link href={`/personas/${person.id}/editar`}>Editar</Link>
+          </p>
+          <form action={deletePersonAction}>
+            <input type="hidden" name="id" value={person.id} />
+            <button type="submit">Eliminar</button>
+          </form>
+        </>
+      ) : null}
     </main>
   );
 }
