@@ -24,14 +24,59 @@ function extractErrorLocation(error: unknown) {
   return stackLines[1] ?? "paso desconocido";
 }
 
-function AdminErrorPanel({ code, debugDetail }: { code: string; debugDetail?: string }) {
+function getSupabaseDebugDetail(error: unknown) {
+  const unknownError = error as {
+    status?: number;
+    code?: string;
+    details?: string;
+    hint?: string;
+  };
+  const location = sanitizeDebugMessage(extractErrorLocation(error));
+
+  if (!(error instanceof Error)) {
+    return {
+      status: "desconocido",
+      code: "desconocido",
+      message: "Error desconocido",
+      details: "desconocido",
+      hint: "desconocido",
+      location
+    };
+  }
+
+  return {
+    status: String(unknownError.status ?? "desconocido"),
+    code: sanitizeDebugMessage(unknownError.code ?? "desconocido"),
+    message: sanitizeDebugMessage(error.message),
+    details: sanitizeDebugMessage(unknownError.details ?? "desconocido"),
+    hint: sanitizeDebugMessage(unknownError.hint ?? "desconocido"),
+    location
+  };
+}
+
+function AdminErrorPanel({
+  code,
+  debugDetail
+}: {
+  code: string;
+  debugDetail?: { status: string; code: string; message: string; details: string; hint: string; location: string };
+}) {
   return (
     <main className="auth-layout">
       <h1>Panel de administración</h1>
       <section style={{ border: "1px solid #f59e0b", borderRadius: 8, padding: 16, background: "#fffbeb" }}>
         <h2>No se pudo cargar el panel de administración</h2>
         <p>Código de error: {code}</p>
-        {debugDetail ? <p>Detalle técnico (debug): {debugDetail}</p> : null}
+        {debugDetail ? (
+          <ul>
+            <li>status: {debugDetail.status}</li>
+            <li>error.code: {debugDetail.code}</li>
+            <li>error.message: {debugDetail.message}</li>
+            <li>error.details: {debugDetail.details}</li>
+            <li>error.hint: {debugDetail.hint}</li>
+            <li>stack: {debugDetail.location}</li>
+          </ul>
+        ) : null}
         <p>Intentá nuevamente en unos segundos.</p>
       </section>
     </main>
@@ -229,10 +274,6 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     );
   } catch (error) {
     console.error("Error al cargar /admin", error);
-    const name = error instanceof Error ? error.name : "Error";
-    const message = error instanceof Error ? error.message : "Error desconocido";
-    const location = extractErrorLocation(error);
-    const safeDetail = sanitizeDebugMessage(`${name}: ${message} (${location})`);
-    return <AdminErrorPanel code="ADM-LOAD-01" debugDetail={debugMode ? safeDetail : undefined} />;
+    return <AdminErrorPanel code="ADM-LOAD-01" debugDetail={debugMode ? getSupabaseDebugDetail(error) : undefined} />;
   }
 }

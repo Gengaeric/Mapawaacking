@@ -17,6 +17,32 @@ function makeUrl(path: string, query?: string) {
   return `${base}/rest/v1/${path}${query ? `?${query}` : ""}`;
 }
 
+async function buildSupabaseError(response: Response, action: string, table: string) {
+  let payload: Record<string, unknown> | null = null;
+
+  try {
+    payload = (await response.json()) as Record<string, unknown>;
+  } catch {
+    payload = null;
+  }
+
+  const supabaseMessage = typeof payload?.message === "string" ? payload.message : `Error al ${action} ${table}`;
+  const error = new Error(supabaseMessage) as Error & {
+    status: number;
+    code?: string;
+    details?: string;
+    hint?: string;
+  };
+
+  error.name = "SupabaseQueryError";
+  error.status = response.status;
+  error.code = typeof payload?.code === "string" ? payload.code : undefined;
+  error.details = typeof payload?.details === "string" ? payload.details : undefined;
+  error.hint = typeof payload?.hint === "string" ? payload.hint : undefined;
+
+  return error;
+}
+
 export async function dbSelect<T>(table: string, query: string) {
   const response = await fetch(makeUrl(table, query), {
     method: "GET",
@@ -25,7 +51,7 @@ export async function dbSelect<T>(table: string, query: string) {
   });
 
   if (!response.ok) {
-    throw new Error(`Error al leer ${table}: ${response.status}`);
+    throw await buildSupabaseError(response, "leer", table);
   }
 
   return (await response.json()) as T[];
@@ -40,7 +66,7 @@ export async function dbInsert<T extends Record<string, Json>>(table: string, pa
   });
 
   if (!response.ok) {
-    throw new Error(`Error al insertar en ${table}: ${response.status}`);
+    throw await buildSupabaseError(response, "insertar en", table);
   }
 
   return (await response.json()) as T[];
@@ -61,7 +87,7 @@ export async function dbUpsert<T extends Record<string, Json>>(
   });
 
   if (!response.ok) {
-    throw new Error(`Error al upsert en ${table}: ${response.status}`);
+    throw await buildSupabaseError(response, "upsert en", table);
   }
 
   return (await response.json()) as T[];
@@ -80,7 +106,7 @@ export async function dbUpdate<T extends Record<string, Json>>(
   });
 
   if (!response.ok) {
-    throw new Error(`Error al editar en ${table}: ${response.status}`);
+    throw await buildSupabaseError(response, "editar en", table);
   }
 
   return (await response.json()) as T[];
@@ -94,6 +120,6 @@ export async function dbDelete(table: string, query: string) {
   });
 
   if (!response.ok) {
-    throw new Error(`Error al borrar en ${table}: ${response.status}`);
+    throw await buildSupabaseError(response, "borrar en", table);
   }
 }
