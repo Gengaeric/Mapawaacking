@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createEditionAction, deleteEventAction } from "@/app/contenido/actions";
 import { EventAiSummary } from "./ai-summary";
+import { getViewerContext } from "@/lib/auth/viewer-context";
 import {
   getEvent,
   listEditionsByEvent,
@@ -13,7 +14,7 @@ import {
 
 export default async function EventoDetallePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const event = await getEvent(id);
+  const [event, viewer] = await Promise.all([getEvent(id), getViewerContext()]);
   if (!event) notFound();
 
   const [editions, people] = await Promise.all([listEditionsByEvent(event.id), listPeople()]);
@@ -45,6 +46,7 @@ export default async function EventoDetallePage({ params }: { params: Promise<{ 
         id={id}
         initialSummary={event.ai_summary}
         hasSourceText={Boolean(event.description?.trim())}
+        canRegenerate={viewer.showAdminUi}
       />
 
       <section>
@@ -59,29 +61,37 @@ export default async function EventoDetallePage({ params }: { params: Promise<{ 
           ))}
         </ul>
 
-        <h3>Nueva edición</h3>
-        <form action={createEditionAction} className="auth-form">
-          <input type="hidden" name="event_id" value={event.id} />
-          <label>Año</label>
-          <input type="number" name="year" required />
-          <label>Fecha</label>
-          <input type="date" name="date" />
-          <label>Ciudad</label>
-          <input name="city" defaultValue={event.city} />
-          <label>Provincia</label>
-          <input name="province" defaultValue={event.province} />
-          <p>La ubicación se completa automáticamente con ciudad y provincia.</p>
-          <button type="submit">Agregar edición</button>
-        </form>
+        {viewer.showAdminUi ? (
+          <>
+            <h3>Nueva edición</h3>
+            <form action={createEditionAction} className="auth-form">
+              <input type="hidden" name="event_id" value={event.id} />
+              <label>Año</label>
+              <input type="number" name="year" required />
+              <label>Fecha</label>
+              <input type="date" name="date" />
+              <label>Ciudad</label>
+              <input name="city" defaultValue={event.city} />
+              <label>Provincia</label>
+              <input name="province" defaultValue={event.province} />
+              <p>La ubicación se completa automáticamente con ciudad y provincia.</p>
+              <button type="submit">Agregar edición</button>
+            </form>
+          </>
+        ) : null}
       </section>
 
-      <p>
-        <Link href={`/eventos/${event.id}/editar`}>Editar</Link>
-      </p>
-      <form action={deleteEventAction}>
-        <input type="hidden" name="id" value={event.id} />
-        <button type="submit">Eliminar</button>
-      </form>
+      {viewer.showAdminUi ? (
+        <>
+          <p>
+            <Link href={`/eventos/${event.id}/editar`}>Editar</Link>
+          </p>
+          <form action={deleteEventAction}>
+            <input type="hidden" name="id" value={event.id} />
+            <button type="submit">Eliminar</button>
+          </form>
+        </>
+      ) : null}
     </main>
   );
 }

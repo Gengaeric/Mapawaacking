@@ -25,5 +25,5 @@ export function resolveUserRole(email: string | undefined, appMetadataRole: unkn
 }
 
 export function canAccessAdmin(role: UserRole): boolean {
-  return role === "admin" || role === "moderador";
+  return role === "admin";
 }

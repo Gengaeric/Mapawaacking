@@ -27,18 +27,42 @@ export async function POST(request: Request) {
   }
 
   const role = await ensureUserProfile(user);
-  const canRegenerate = role === "admin" || role === "moderador";
+  const canRegenerate = role === "admin";
 
   if (force && !canRegenerate) {
     return NextResponse.json({ ok: false, error: "FORBIDDEN" }, { status: 403 });
   }
 
-  const record = type === "person" ? await getPerson(id) : await getEvent(id);
+  if (type === "person") {
+    const record = await getPerson(id);
+    if (!record) {
+      return NextResponse.json({ ok: false, error: "No se encontró el registro." }, { status: 404 });
+    }
+
+    const sourceText = (record.biography ?? "").trim();
+    if (!sourceText) {
+      return NextResponse.json(
+        { ok: false, error: "No hay texto suficiente para resumir" },
+        { status: 400 }
+      );
+    }
+
+    const existingSummary = record.ai_summary?.trim();
+    if (existingSummary && !force) {
+      return NextResponse.json({ ok: true, summary: existingSummary, ai_summary: existingSummary, fromCache: true });
+    }
+
+    const summary = await summarizeInSpanish(sourceText);
+    await updatePerson(id, { ai_summary: summary });
+    return NextResponse.json({ ok: true, summary, ai_summary: summary, fromCache: false });
+  }
+
+  const record = await getEvent(id);
   if (!record) {
     return NextResponse.json({ ok: false, error: "No se encontró el registro." }, { status: 404 });
   }
 
-  const sourceText = (type === "person" ? record.biography : record.description)?.trim() ?? "";
+  const sourceText = (record.description ?? "").trim();
   if (!sourceText) {
     return NextResponse.json(
       { ok: false, error: "No hay texto suficiente para resumir" },
@@ -52,12 +76,7 @@ export async function POST(request: Request) {
   }
 
   const summary = await summarizeInSpanish(sourceText);
-
-  if (type === "person") {
-    await updatePerson(id, { ai_summary: summary });
-  } else {
-    await updateEvent(id, { ai_summary: summary });
-  }
+  await updateEvent(id, { ai_summary: summary });
 
   return NextResponse.json({ ok: true, summary, ai_summary: summary, fromCache: false });
 }

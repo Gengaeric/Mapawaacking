@@ -243,3 +243,21 @@ button:hover {
 .mensaje-ok {
   color: #86f4c2;
 }
+
+.admin-view-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 0.55rem 1rem;
+  border-bottom: 1px solid var(--borde);
+  background: #1e2638;
+}
+
+.admin-view-toolbar {
+  background: #162033;
+}
+
+.admin-view-banner form {
+  margin: 0;
+}

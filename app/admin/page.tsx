@@ -7,6 +7,7 @@ import { buildAdminFilters } from "@/app/admin/build-admin-filters";
 import { deleteEventAction, deletePersonAction, restoreEventAction, restorePersonAction } from "@/app/contenido/actions";
 import { UsersManager } from "@/app/admin/users-manager";
 import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
+import { getAdminViewModeForRole } from "@/lib/auth/admin-view-mode";
 import { ensureUserProfile } from "@/lib/auth/server-roles";
 import { canAccessAdmin } from "@/lib/auth/roles";
 import { dbSelect } from "@/lib/supabase/db";
@@ -21,7 +22,8 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
   if (!user) redirect("/login");
 
   const role = await ensureUserProfile(user);
-  if (!canAccessAdmin(role)) redirect("/login");
+  const adminViewMode = await getAdminViewModeForRole(role);
+  if (!canAccessAdmin(role) || adminViewMode !== "admin") redirect("/");
 
   const tab = params.tab ?? "contenido";
   const tipo = params.tipo ?? "personas";
