@@ -86,9 +86,34 @@ export type GeocodeCache = {
   updated_at: string;
 };
 
-export async function listPeople(includeDeleted = false) {
-  const deletedFilter = includeDeleted ? "" : "&is_deleted=eq.false";
-  return dbSelect<Person>("people", `select=*&order=created_at.desc${deletedFilter}`);
+function appendQuery(filters: string[], column: string, operator: "eq" | "ilike", value?: string) {
+  if (!value) return;
+  const encoded = encodeURIComponent(operator === "ilike" ? `*${value}*` : value);
+  filters.push(`${column}=${operator}.${encoded}`);
+}
+
+export async function listPeople(
+  includeDeleted = false,
+  options?: {
+    province?: string;
+    crew?: string;
+    q?: string;
+  }
+) {
+  const filters = ["select=*", "order=created_at.desc"];
+
+  if (!includeDeleted) {
+    filters.push("is_deleted=eq.false");
+  }
+
+  appendQuery(filters, "province", "eq", options?.province);
+  appendQuery(filters, "crew_or_club", "eq", options?.crew);
+  if (options?.q) {
+    const encoded = encodeURIComponent(`*${options.q}*`);
+    filters.push(`or=(full_name.ilike.${encoded},stage_name.ilike.${encoded})`);
+  }
+
+  return dbSelect<Person>("people", filters.join("&"));
 }
 
 export async function getPerson(id: string) {
@@ -126,9 +151,25 @@ export async function restorePerson(id: string) {
   return rows[0] ?? null;
 }
 
-export async function listEvents(includeDeleted = false) {
-  const deletedFilter = includeDeleted ? "" : "&is_deleted=eq.false";
-  return dbSelect<Event>("events", `select=*&order=created_at.desc${deletedFilter}`);
+export async function listEvents(
+  includeDeleted = false,
+  options?: {
+    province?: string;
+    eventType?: string;
+    q?: string;
+  }
+) {
+  const filters = ["select=*", "order=created_at.desc"];
+
+  if (!includeDeleted) {
+    filters.push("is_deleted=eq.false");
+  }
+
+  appendQuery(filters, "province", "eq", options?.province);
+  appendQuery(filters, "event_type", "eq", options?.eventType);
+  appendQuery(filters, "name", "ilike", options?.q);
+
+  return dbSelect<Event>("events", filters.join("&"));
 }
 
 export async function getEvent(id: string) {
