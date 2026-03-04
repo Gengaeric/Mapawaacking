@@ -108,6 +108,8 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
       startYearTo,
       includeDeleted
     } = parsedFilters;
+    const peopleQueryDebugCalls: string[] = [];
+    const eventsQueryDebugCalls: string[] = [];
     const auditEntity = params.entidad ?? "";
     const auditAction = params.accion ?? "";
     const auditActor = (params.actor ?? "").toLowerCase();
@@ -115,8 +117,16 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     const auditTo = params.hasta ?? "";
 
     const [people, events, profilesResult] = await Promise.all([
-      listPeople(includeDeleted, { province, crew, q: query, startYear, startYearFrom, startYearTo }),
-      listEvents(includeDeleted, { province, eventType, q: query }),
+      listPeople(includeDeleted, {
+        province,
+        crew,
+        q: query,
+        startYear,
+        startYearFrom,
+        startYearTo,
+        debugCalls: debugMode ? peopleQueryDebugCalls : undefined
+      }),
+      listEvents(includeDeleted, { province, eventType, q: query, debugCalls: debugMode ? eventsQueryDebugCalls : undefined }),
       listProfiles()
         .then((profiles) => ({ profiles, missingProfilesTable: false }))
         .catch((error) => {
@@ -130,7 +140,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     const missingProfilesTable = profilesResult.missingProfilesTable;
 
     const profileById = new Map(profiles.map((p) => [p.user_id, p.email]));
-    const showProductionFilterDebug = process.env.NODE_ENV === "production" && debugMode;
+    const showFilterDebug = debugMode;
 
     const [auditRows, totalPeople, totalEvents, totalEditions, totalParticipation, peopleByProvince, peopleByYear, eventsByType, eventsByProvince] = await Promise.all([
       listAuditLogs(),
@@ -159,7 +169,16 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     return (
       <main className="auth-layout">
         <h1>Panel de administración</h1>
-        {showProductionFilterDebug ? (<p data-debug-filters>debug.filters.parsed: {JSON.stringify(parsedFilters)}</p>) : null}
+        {showFilterDebug ? (
+          <section data-debug-filters style={{ background: "#f5f5f5", borderRadius: 8, padding: 12, marginBottom: 12 }}>
+            <p>parsedFilters: {JSON.stringify(parsedFilters)}</p>
+            <p>note: filters applied via eq/ilike only</p>
+            <p>people query calls:</p>
+            <pre style={{ whiteSpace: "pre-wrap" }}>{peopleQueryDebugCalls.join("\n")}</pre>
+            <p>events query calls:</p>
+            <pre style={{ whiteSpace: "pre-wrap" }}>{eventsQueryDebugCalls.join("\n")}</pre>
+          </section>
+        ) : null}
         <p>Rol actual: {role}</p>
         {missingProfilesTable ? (
           <section style={{ border: "1px solid #f59e0b", borderRadius: 8, padding: 12, background: "#fffbeb" }}>

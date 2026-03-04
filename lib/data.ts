@@ -96,17 +96,41 @@ export async function listPeople(
     startYear?: number;
     startYearFrom?: number;
     startYearTo?: number;
+    debugCalls?: string[];
   }
 ) {
+  const baseCall = 'supabase.from("people").select("*").order("created_at", { ascending: false })';
+
   const applyBaseFilters = () => {
     const query = fromTable<Person>("people").select("*").order("created_at", { ascending: false });
+    const callParts = [baseCall];
 
-    if (!includeDeleted) query.eq("is_deleted", false);
-    if (options?.province) query.eq("province", options.province);
-    if (options?.crew) query.ilike("crew_or_club", `*${options.crew}*`);
-    if (typeof options?.startYear === "number") query.eq("start_year", options.startYear);
-    if (typeof options?.startYearFrom === "number") query.gte("start_year", options.startYearFrom);
-    if (typeof options?.startYearTo === "number") query.lte("start_year", options.startYearTo);
+    if (!includeDeleted) {
+      query.eq("is_deleted", false);
+      callParts.push('.eq("is_deleted", false)');
+    }
+    if (options?.province) {
+      query.eq("province", options.province);
+      callParts.push(`.eq("province", ${JSON.stringify(options.province)})`);
+    }
+    if (options?.crew) {
+      query.ilike("crew_or_club", `*${options.crew}*`);
+      callParts.push(`.ilike("crew_or_club", ${JSON.stringify(`*${options.crew}*`)})`);
+    }
+    if (typeof options?.startYear === "number") {
+      query.eq("start_year", options.startYear);
+      callParts.push(`.eq("start_year", ${options.startYear})`);
+    }
+    if (typeof options?.startYearFrom === "number") {
+      query.gte("start_year", options.startYearFrom);
+      callParts.push(`.gte("start_year", ${options.startYearFrom})`);
+    }
+    if (typeof options?.startYearTo === "number") {
+      query.lte("start_year", options.startYearTo);
+      callParts.push(`.lte("start_year", ${options.startYearTo})`);
+    }
+
+    options?.debugCalls?.push(callParts.join(""));
 
     return query;
   };
@@ -120,6 +144,13 @@ export async function listPeople(
     applyBaseFilters().ilike("full_name", searchPattern).execute(),
     applyBaseFilters().ilike("stage_name", searchPattern).execute()
   ]);
+
+  if (options?.debugCalls) {
+    const lastStageNameCall = options.debugCalls.pop();
+    const lastFullNameCall = options.debugCalls.pop();
+    if (lastFullNameCall) options.debugCalls.push(`${lastFullNameCall}.ilike("full_name", ${JSON.stringify(searchPattern)})`);
+    if (lastStageNameCall) options.debugCalls.push(`${lastStageNameCall}.ilike("stage_name", ${JSON.stringify(searchPattern)})`);
+  }
 
   const uniquePeople = new Map<string, Person>();
   for (const person of [...byFullName, ...byStageName]) {
@@ -170,14 +201,30 @@ export async function listEvents(
     province?: string;
     eventType?: string;
     q?: string;
+    debugCalls?: string[];
   }
 ) {
   const query = fromTable<Event>("events").select("*").order("created_at", { ascending: false });
+  const callParts = ['supabase.from("events").select("*").order("created_at", { ascending: false })'];
 
-  if (!includeDeleted) query.eq("is_deleted", false);
-  if (options?.province) query.eq("province", options.province);
-  if (options?.eventType) query.eq("event_type", options.eventType);
-  if (options?.q) query.ilike("name", `*${options.q}*`);
+  if (!includeDeleted) {
+    query.eq("is_deleted", false);
+    callParts.push('.eq("is_deleted", false)');
+  }
+  if (options?.province) {
+    query.eq("province", options.province);
+    callParts.push(`.eq("province", ${JSON.stringify(options.province)})`);
+  }
+  if (options?.eventType) {
+    query.eq("event_type", options.eventType);
+    callParts.push(`.eq("event_type", ${JSON.stringify(options.eventType)})`);
+  }
+  if (options?.q) {
+    query.ilike("name", `*${options.q}*`);
+    callParts.push(`.ilike("name", ${JSON.stringify(`*${options.q}*`)})`);
+  }
+
+  options?.debugCalls?.push(callParts.join(""));
 
   return query.execute();
 }
